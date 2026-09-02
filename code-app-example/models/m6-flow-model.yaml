@@ -1,0 +1,123 @@
+# M6 流程模型 - 合同管理域
+# 每条 flow 包含语义字段 + nodeGraph（流程引擎可执行定义：nodes + edges）
+model_type: FLOW
+version: "1.0"
+domain: "销售合同执行管理"
+
+flows:
+  # ══════════════════════════════════════════════════════════
+  # 合同登记审批（APPROVAL，可执行）：财务经理 -> 金额≥100万 -> 总经理
+  # ══════════════════════════════════════════════════════════
+  - id: FLOW-CONTRACT-APPROVAL-001
+    name: 合同登记审批
+    flowType: APPROVAL
+    description: 合同先由财务经理审批，金额大于等于100万元时增加总经理审批
+    businessObjectRefs: [AGG-CONTRACT-001]
+    roleRefs: [ROLE-FINANCE-MANAGER, ROLE-GENERAL-MANAGER]
+    trigger:
+      triggerType: BEHAVIOR
+      behaviorRef: Contract_Submit
+    startActivity: start
+    endActivities: [end_ok, end_reject]
+    nodeGraph:
+      nodes:
+        - { id: start, type: start, name: 开始 }
+        - { id: n_fm, type: approval_task, name: 财务经理审批, role_ref: ROLE-FINANCE-MANAGER, outcomes: [APPROVE, REJECT] }
+        - id: g1
+          type: gateway
+          name: 大额合同判断
+          branches:
+            - { name: 金额大于等于100万元, rule_ref: RULE-CONTRACT-APPROVAL-LEVEL, target: n_gm }
+            - { name: 普通金额合同, target: end_ok, is_default: true }
+        - { id: n_gm, type: approval_task, name: 总经理审批, role_ref: ROLE-GENERAL-MANAGER, outcomes: [APPROVE, REJECT] }
+        - { id: end_ok, type: end, name: 审批通过结束, result: APPROVED }
+        - { id: end_reject, type: end, name: 驳回结束, result: REJECTED }
+      edges:
+        - { source: start, target: n_fm }
+        - { source: n_fm, target: g1, approval_outcome: APPROVE }
+        - { source: n_fm, target: end_reject, approval_outcome: REJECT }
+        - { source: g1, target: n_gm }
+        - { source: g1, target: end_ok }
+        - { source: n_gm, target: end_ok, approval_outcome: APPROVE }
+        - { source: n_gm, target: end_reject, approval_outcome: REJECT }
+
+  # ══════════════════════════════════════════════════════════
+  # 开票审批（APPROVAL，可执行）：财务经理单节点
+  # ══════════════════════════════════════════════════════════
+  - id: FLOW-INVOICE-APPROVAL-002
+    name: 开票审批
+    flowType: APPROVAL
+    description: 开票由财务经理单节点审批
+    businessObjectRefs: [AGG-INVOICE-001]
+    roleRefs: [ROLE-FINANCE-MANAGER]
+    trigger:
+      triggerType: BEHAVIOR
+      behaviorRef: Invoice_Submit
+    startActivity: start
+    endActivities: [end_ok, end_reject]
+    nodeGraph:
+      nodes:
+        - { id: start, type: start, name: 开始 }
+        - { id: n_fm, type: approval_task, name: 财务经理审批, role_ref: ROLE-FINANCE-MANAGER, outcomes: [APPROVE, REJECT] }
+        - { id: end_ok, type: end, name: 审批通过结束, result: APPROVED }
+        - { id: end_reject, type: end, name: 驳回结束, result: REJECTED }
+      edges:
+        - { source: start, target: n_fm }
+        - { source: n_fm, target: end_ok, approval_outcome: APPROVE }
+        - { source: n_fm, target: end_reject, approval_outcome: REJECT }
+
+  # ══════════════════════════════════════════════════════════
+  # 合同全生命周期协同流（COLLABORATION，参考：由行为 + syncTriggers 驱动）
+  # ══════════════════════════════════════════════════════════
+  - id: FLOW-CONTRACT-001
+    name: 合同全生命周期流程
+    flowType: COLLABORATION
+    description: 合同创建、登记审批、开票、收款到结清/归档的端到端协同流（参考）
+    businessObjectRefs: [AGG-CONTRACT-001, AGG-INVOICE-001, AGG-RECEIPT-001]
+    roleRefs: [ROLE-SALES, ROLE-FINANCE, ROLE-FINANCE-MANAGER, ROLE-GENERAL-MANAGER]
+    trigger:
+      triggerType: MANUAL
+    startActivity: c_start
+    endActivities: [c_end]
+    nodeGraph:
+      nodes:
+        - { id: c_start, type: start, name: 开始 }
+        - { id: c_create, type: user_task, name: 创建合同, role_ref: ROLE-SALES, behavior_ref: Contract_Submit }
+        - { id: c_approve, type: sub_flow_call, name: 合同登记审批, sub_flow_ref: FLOW-CONTRACT-APPROVAL-001 }
+        - { id: c_exec, type: sub_flow_call, name: 开票与收款, sub_flow_ref: FLOW-CONTRACT-INVOICE-002 }
+        - { id: c_settle, type: system_task, name: 合同结清判断, behavior_ref: Contract_UpdateSettlementStatus }
+        - { id: c_end, type: end, name: 结束, result: APPROVED }
+      edges:
+        - { source: c_start, target: c_create }
+        - { source: c_create, target: c_approve }
+        - { source: c_approve, target: c_exec }
+        - { source: c_exec, target: c_settle }
+        - { source: c_settle, target: c_end }
+
+  # ══════════════════════════════════════════════════════════
+  # 开票与收款协同流（COLLABORATION，参考）
+  # ══════════════════════════════════════════════════════════
+  - id: FLOW-CONTRACT-INVOICE-002
+    name: 合同开票与收款流程
+    flowType: COLLABORATION
+    description: 开票登记、开票审批、收款登记与状态联动（参考）
+    businessObjectRefs: [AGG-CONTRACT-001, AGG-INVOICE-001, AGG-RECEIPT-001]
+    roleRefs: [ROLE-FINANCE, ROLE-FINANCE-MANAGER]
+    trigger:
+      triggerType: MANUAL
+    startActivity: i_start
+    endActivities: [i_end]
+    nodeGraph:
+      nodes:
+        - { id: i_start, type: start, name: 开始 }
+        - { id: i_create, type: user_task, name: 开票登记, role_ref: ROLE-FINANCE, behavior_ref: Invoice_Submit }
+        - { id: i_approve, type: sub_flow_call, name: 开票审批, sub_flow_ref: FLOW-INVOICE-APPROVAL-002 }
+        - { id: i_receipt, type: user_task, name: 录入收款, role_ref: ROLE-FINANCE, behavior_ref: Receipt_Record }
+        - { id: i_update, type: system_task, name: 更新开票收款状态, behavior_ref: Invoice_UpdateReceiptStatus }
+        - { id: i_end, type: end, name: 结束, result: APPROVED }
+      edges:
+        - { source: i_start, target: i_create }
+        - { source: i_create, target: i_approve }
+        - { source: i_approve, target: i_receipt }
+        - { source: i_receipt, target: i_update }
+        - { source: i_update, target: i_end }

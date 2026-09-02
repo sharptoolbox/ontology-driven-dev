@@ -1,0 +1,26 @@
+# 应用配置（所有可变项配置化，禁止硬编码）
+app:
+  name: 销售合同执行管理系统
+  host: 0.0.0.0
+  port: 5000
+  secret_key: change-me-in-production
+  database: data/app.db
+
+auth:
+  jwt_secret: please-change-this-jwt-secret
+  jwt_expires_hours: 2
+  default_admin: admin
+  default_admin_password: admin123
+
+# AI 对话（本期不实现，保留配置占位）
+ai:
+  enabled: false
+  provider: deepseek
+  api_key: ""
+  base_url: ""
+  model: deepseek-chat
+
+# 只读动态 SQL 边界
+sql_readonly:
+  max_rows: 200
+  timeout_seconds: 5

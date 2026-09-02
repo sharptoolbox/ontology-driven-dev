@@ -1,0 +1,17 @@
+{
+  "model_type": "MANIFEST",
+  "version": "1.0",
+  "domain": "销售合同执行管理",
+  "project": "contract-management",
+  "source_requirements": "合同管理需求规格说明书-V9.md",
+  "framework": "ontology_modeling_framework_v9.md",
+  "model_files": [
+    "m1-object-model.yaml",
+    "m2-behavior-model.yaml",
+    "m3-rule-model.yaml",
+    "m5-actor-model.yaml",
+    "m6-flow-model.yaml",
+    "m7-report-model.yaml",
+    "mu-ui-model.yaml"
+  ]
+}

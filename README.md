@@ -34,13 +34,24 @@ ontology-driven-dev/
 │   ├── 合同管理需求规格说明书-V9.md
 │   ├── m1-object-model.yaml … m7-report-model.yaml + mu-ui-model.yaml
 │   └── manifest.json
-└── techbase/                     # code-paas 干净源码（复制到 code-app 后扩展）
+├── techbase/                     # code-paas 干净源码（复制到 code-app 后扩展）
     ├── backend/                  # Flask + SQLite 后端（流程引擎 / 本体注册表 / 服务层）
     ├── frontend/                 # React + TypeScript 前端（Vite）
     ├── models/                   # 示例七模型 YAML（正式使用时替换为你的模型）
     ├── requirements.txt
     └── README.md                 # 底座运行说明
+└── code-app-example/             # 基于七模型生成的销售合同执行管理完整应用样例
+    ├── models/                   # 合同领域七模型 YAML + manifest
+    ├── backend/                  # 业务服务、流程、报表、AI 助手及测试数据库
+    ├── frontend/                 # 合同、开票、收款、审批及报表页面
+    └── README.md                 # 样例功能、账号、启动与自测说明
 ```
+
+### 完整应用样例
+
+`code-app-example/` 展示了从需求规格、七模型本体到可运行系统的完整落地结果。样例业务为销售合同执行管理，覆盖合同登记与分级审批、开票审批、收款及冲销、跨对象状态联动、固定报表、系统管理和右侧 AI 智能助理。
+
+样例自带 SQLite 测试数据和默认测试账号，可按 [`code-app-example/README.md`](./code-app-example/README.md) 的说明直接启动和验证完整业务链路。仓库中的 AI API Key 已清空，使用智能助理前需在系统界面中自行配置 OpenAI 兼容的大模型服务。
 
 ---
 

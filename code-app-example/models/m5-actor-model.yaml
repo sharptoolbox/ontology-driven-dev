@@ -1,0 +1,245 @@
+# M5 主体模型元文件 - m5-actor-model.yaml
+# 依据《合同管理需求规格说明书-V9.md》第六部分 + 附录 C.4
+model_type: ACTOR
+version: "1.0"
+domain: "销售合同执行管理"
+
+actors:
+  - actorId: ACTOR-SALES
+    name: 销售人员
+    actorType: HUMAN
+    roles:
+      - ROLE-SALES
+
+  - actorId: ACTOR-FINANCE
+    name: 财务人员
+    actorType: HUMAN
+    roles:
+      - ROLE-FINANCE
+
+  - actorId: ACTOR-FINANCE-MANAGER
+    name: 财务经理
+    actorType: HUMAN
+    roles:
+      - ROLE-FINANCE-MANAGER
+
+  - actorId: ACTOR-GENERAL-MANAGER
+    name: 总经理
+    actorType: HUMAN
+    roles:
+      - ROLE-GENERAL-MANAGER
+
+  - actorId: ACTOR-EMPLOYEE
+    name: 普通员工
+    actorType: HUMAN
+    roles:
+      - ROLE-EMPLOYEE
+
+  - actorId: ACTOR-SYSTEM
+    name: 系统自动执行主体
+    actorType: SYSTEM
+    roles:
+      - ROLE-SYSTEM
+
+roles:
+  - roleId: ROLE-ADMIN
+    name: 系统管理员
+    permissions: ["*"]
+  - roleId: ROLE-SALES
+    name: 销售人员
+    permissions:
+      - PERM-CONTRACT-SAVE-DRAFT
+      - PERM-CONTRACT-SUBMIT
+      - PERM-CONTRACT-RESUBMIT
+      - PERM-CONTRACT-QUERY-LIST
+      - PERM-CONTRACT-QUERY-DETAIL
+      - PERM-CONTRACT-QUERY-EXECUTION
+      - PERM-CONTRACT-QUERY-DEPT-SUMMARY
+      - PERM-CONTRACT-QUERY-UNRECEIVED
+
+  - roleId: ROLE-FINANCE
+    name: 财务人员
+    permissions:
+      - PERM-CONTRACT-SAVE-DRAFT
+      - PERM-CONTRACT-SUBMIT
+      - PERM-CONTRACT-RESUBMIT
+      - PERM-INVOICE-SAVE-DRAFT
+      - PERM-INVOICE-SUBMIT
+      - PERM-INVOICE-RESUBMIT
+      - PERM-RECEIPT-RECORD
+      - PERM-RECEIPT-REVERSE
+      - PERM-INVOICE-VOID
+      - PERM-CONTRACT-QUERY-LIST
+      - PERM-CONTRACT-QUERY-DETAIL
+      - PERM-CONTRACT-QUERY-EXECUTION
+      - PERM-CONTRACT-QUERY-DEPT-SUMMARY
+      - PERM-CONTRACT-QUERY-UNRECEIVED
+
+  - roleId: ROLE-FINANCE-MANAGER
+    name: 财务经理
+    permissions:
+      - PERM-CONTRACT-VOID
+      - PERM-PRODUCT-MAINTAIN
+      - PERM-CUSTOMER-MAINTAIN
+      - PERM-DEPARTMENT-MAINTAIN
+      - PERM-EMPLOYEE-MAINTAIN
+      - PERM-CONTRACT-APPROVE-FINANCE
+      - PERM-INVOICE-APPROVE
+      - PERM-CONTRACT-QUERY-LIST
+      - PERM-CONTRACT-QUERY-DETAIL
+      - PERM-CONTRACT-QUERY-EXECUTION
+      - PERM-CONTRACT-QUERY-DEPT-SUMMARY
+      - PERM-CONTRACT-QUERY-UNRECEIVED
+
+  - roleId: ROLE-GENERAL-MANAGER
+    name: 总经理
+    permissions:
+      - PERM-CONTRACT-APPROVE-LARGE
+      - PERM-CONTRACT-QUERY-LIST
+      - PERM-CONTRACT-QUERY-DETAIL
+      - PERM-CONTRACT-QUERY-EXECUTION
+      - PERM-CONTRACT-QUERY-DEPT-SUMMARY
+      - PERM-CONTRACT-QUERY-UNRECEIVED
+
+  - roleId: ROLE-EMPLOYEE
+    name: 普通员工
+    permissions:
+      - PERM-CONTRACT-QUERY-LIST-OWN-DEPT
+      - PERM-CONTRACT-QUERY-DETAIL-OWN-DEPT
+      - PERM-CONTRACT-QUERY-EXECUTION-OWN-DEPT
+      - PERM-CONTRACT-QUERY-DEPT-SUMMARY-OWN-DEPT
+      - PERM-CONTRACT-QUERY-UNRECEIVED-OWN-DEPT
+
+  - roleId: ROLE-SYSTEM
+    name: 系统自动执行主体
+    permissions: []
+
+permissions:
+  # 合同录入（FUNC-01～FUNC-03）
+  - permissionId: PERM-CONTRACT-SAVE-DRAFT
+    targetType: BEHAVIOR
+    targetRef: Contract_SaveAsDraft
+    dataScope: ALL
+  - permissionId: PERM-CONTRACT-SUBMIT
+    targetType: BEHAVIOR
+    targetRef: Contract_Submit
+    dataScope: ALL
+  - permissionId: PERM-CONTRACT-RESUBMIT
+    targetType: BEHAVIOR
+    targetRef: Contract_Resubmit
+    dataScope: ALL
+
+  # 开票录入（FUNC-04～FUNC-06）
+  - permissionId: PERM-INVOICE-SAVE-DRAFT
+    targetType: BEHAVIOR
+    targetRef: Invoice_SaveAsDraft
+    dataScope: ALL
+  - permissionId: PERM-INVOICE-SUBMIT
+    targetType: BEHAVIOR
+    targetRef: Invoice_Submit
+    dataScope: ALL
+  - permissionId: PERM-INVOICE-RESUBMIT
+    targetType: BEHAVIOR
+    targetRef: Invoice_Resubmit
+    dataScope: ALL
+
+  # 收款（FUNC-07～FUNC-08）
+  - permissionId: PERM-RECEIPT-RECORD
+    targetType: BEHAVIOR
+    targetRef: Receipt_Record
+    dataScope: ALL
+  - permissionId: PERM-RECEIPT-REVERSE
+    targetType: BEHAVIOR
+    targetRef: Receipt_Reverse
+    dataScope: ALL
+
+  # 状态变更（FUNC-09～FUNC-10）
+  - permissionId: PERM-CONTRACT-VOID
+    targetType: BEHAVIOR
+    targetRef: Contract_VoidOrArchive
+    dataScope: ALL
+  - permissionId: PERM-INVOICE-VOID
+    targetType: BEHAVIOR
+    targetRef: Invoice_Void
+    dataScope: ALL
+
+  # 主数据维护（FUNC-11～FUNC-14）
+  - permissionId: PERM-PRODUCT-MAINTAIN
+    targetType: BEHAVIOR
+    targetRef: Product_Maintain
+    dataScope: ALL
+  - permissionId: PERM-CUSTOMER-MAINTAIN
+    targetType: BEHAVIOR
+    targetRef: Customer_Maintain
+    dataScope: ALL
+  - permissionId: PERM-DEPARTMENT-MAINTAIN
+    targetType: BEHAVIOR
+    targetRef: Department_Maintain
+    dataScope: ALL
+  - permissionId: PERM-EMPLOYEE-MAINTAIN
+    targetType: BEHAVIOR
+    targetRef: Employee_Maintain
+    dataScope: ALL
+
+  # 查询（Q-01～Q-05，全部数据范围）
+  - permissionId: PERM-CONTRACT-QUERY-LIST
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryList
+    dataScope: ALL
+  - permissionId: PERM-CONTRACT-QUERY-DETAIL
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryDetail
+    dataScope: ALL
+  - permissionId: PERM-CONTRACT-QUERY-EXECUTION
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryExecutionAnalysis
+    dataScope: ALL
+  - permissionId: PERM-CONTRACT-QUERY-DEPT-SUMMARY
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryDepartmentSummary
+    dataScope: ALL
+  - permissionId: PERM-CONTRACT-QUERY-UNRECEIVED
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryInvoicedUnreceived
+    dataScope: ALL
+
+  # 查询（Q-01～Q-05，普通员工仅本部门）
+  - permissionId: PERM-CONTRACT-QUERY-LIST-OWN-DEPT
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryList
+    dataScope: DEPT
+    abacCondition: "actor.departmentId == resource.departmentId"
+  - permissionId: PERM-CONTRACT-QUERY-DETAIL-OWN-DEPT
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryDetail
+    dataScope: DEPT
+    abacCondition: "actor.departmentId == resource.departmentId"
+  - permissionId: PERM-CONTRACT-QUERY-EXECUTION-OWN-DEPT
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryExecutionAnalysis
+    dataScope: DEPT
+    abacCondition: "actor.departmentId == resource.departmentId"
+  - permissionId: PERM-CONTRACT-QUERY-DEPT-SUMMARY-OWN-DEPT
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryDepartmentSummary
+    dataScope: DEPT
+    abacCondition: "actor.departmentId == resource.departmentId"
+  - permissionId: PERM-CONTRACT-QUERY-UNRECEIVED-OWN-DEPT
+    targetType: BEHAVIOR
+    targetRef: Contract_QueryInvoicedUnreceived
+    dataScope: DEPT
+    abacCondition: "actor.departmentId == resource.departmentId"
+
+  # 审批（B-APP-01～B-APP-03）
+  - permissionId: PERM-CONTRACT-APPROVE-FINANCE
+    targetType: BEHAVIOR
+    targetRef: Contract_ApproveFinance
+    dataScope: ALL
+  - permissionId: PERM-CONTRACT-APPROVE-LARGE
+    targetType: BEHAVIOR
+    targetRef: Contract_ApproveGeneralManager
+    dataScope: ALL
+  - permissionId: PERM-INVOICE-APPROVE
+    targetType: BEHAVIOR
+    targetRef: Invoice_ApproveFinance
+    dataScope: ALL

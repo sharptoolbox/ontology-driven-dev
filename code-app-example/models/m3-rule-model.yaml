@@ -1,0 +1,280 @@
+# M3 规则模型元文件 - m3-rule-model.yaml
+# 依据《合同管理需求规格说明书-V9.md》2.3.3 + 附录 C.3
+model_type: RULE
+version: "2.0"
+domain: "销售合同执行管理"
+
+rules:
+  - id: RULE-CONTRACT-APPROVAL-LEVEL
+    name: 合同审批层级判定
+    ruleType: VALIDATION
+    description: 判断合同含税总金额是否大于等于 100 万元，决定是否需要总经理审批
+    inputParams:
+      - name: totalAmount
+        type: Decimal
+        sourceField: Contract.totalAmount
+        required: true
+    outputType: Boolean
+    expression: |
+      totalAmount >= 1000000
+    reusedBy:
+      - Contract_Submit
+      - Contract_Resubmit
+      - Contract_ApproveFinance
+    version: "1.0"
+
+  - id: RULE-CONTRACT-INVOICE-ELIGIBLE
+    name: 合同可开票资格
+    ruleType: VALIDATION
+    description: 判断合同是否已纳入管理且未作废、未归档，从而允许开票
+    inputParams:
+      - name: contractStatus
+        type: Enum
+        sourceField: Contract.status
+        required: true
+    outputType: Boolean
+    expression: |
+      contractStatus == '已纳入管理' OR contractStatus == '已结清'
+    reusedBy:
+      - Invoice_SaveAsDraft
+      - Invoice_Submit
+      - Invoice_Resubmit
+    version: "1.0"
+
+  - id: RULE-PAYSTAGE-REMAIN-QUOTA
+    name: 付款阶段剩余可开票额度
+    ruleType: VALIDATION
+    description: 判断本次分摊加历史有效分摊是否不超过阶段应付金额
+    inputParams:
+      - name: stageAmount
+        type: Decimal
+        sourceField: PaymentStage.stageAmount
+        required: true
+      - name: historicalAllocation
+        type: Decimal
+        sourceField: Invoice.aggregatedAllocation
+        required: true
+      - name: currentAllocation
+        type: Decimal
+        sourceField: InvoiceStageAllocation.allocatedAmount
+        required: true
+    outputType: Boolean
+    expression: |
+      historicalAllocation + currentAllocation <= stageAmount
+    reusedBy:
+      - Invoice_SaveAsDraft
+      - Invoice_Submit
+      - Invoice_Resubmit
+    version: "1.0"
+
+  - id: RULE-INVOICE-REMAIN-RECEIPT-QUOTA
+    name: 开票剩余可收款额度
+    ruleType: VALIDATION
+    description: 判断本次收款加历史有效收款是否不超过开票金额
+    inputParams:
+      - name: invoiceAmount
+        type: Decimal
+        sourceField: Invoice.invoiceAmount
+        required: true
+      - name: historicalReceipt
+        type: Decimal
+        sourceField: Receipt.aggregatedAmount
+        required: true
+      - name: currentReceipt
+        type: Decimal
+        sourceField: Receipt.receiptAmount
+        required: true
+    outputType: Boolean
+    expression: |
+      historicalReceipt + currentReceipt <= invoiceAmount
+    reusedBy:
+      - Receipt_Record
+    version: "1.0"
+
+  - id: RULE-INVOICE-RECEIPT-STATUS
+    name: 开票收款状态判定
+    ruleType: DERIVATION
+    description: 根据有效收款累计相对开票金额判定开票处于未收款、部分收款或全部收齐
+    inputParams:
+      - name: invoiceAmount
+        type: Decimal
+        sourceField: Invoice.invoiceAmount
+        required: true
+      - name: receivedAmount
+        type: Decimal
+        sourceField: Receipt.aggregatedAmount
+        required: true
+    outputType: Enum
+    expression: |
+      IF receivedAmount <= 0 THEN '未收款'
+      ELSE IF receivedAmount >= invoiceAmount THEN '已收款'
+      ELSE '部分收款'
+    reusedBy:
+      - Invoice_UpdateReceiptStatus
+    version: "1.0"
+
+  - id: RULE-CONTRACT-VOID-ELIGIBLE
+    name: 合同作废资格
+    ruleType: VALIDATION
+    description: 判断是否不存在已批准开票或有效收款，从而允许作废合同
+    inputParams:
+      - name: approvedInvoiceCount
+        type: Integer
+        sourceField: Invoice.approvedCount
+        required: true
+      - name: validReceiptCount
+        type: Integer
+        sourceField: Receipt.validCount
+        required: true
+    outputType: Boolean
+    expression: |
+      approvedInvoiceCount == 0 AND validReceiptCount == 0
+    reusedBy:
+      - Contract_VoidOrArchive
+    version: "1.0"
+
+  - id: RULE-INVOICE-VOID-ELIGIBLE
+    name: 开票作废资格
+    ruleType: VALIDATION
+    description: 判断开票是否存在有效收款，从而允许作废
+    inputParams:
+      - name: validReceiptCount
+        type: Integer
+        sourceField: Receipt.validCount
+        required: true
+    outputType: Boolean
+    expression: |
+      validReceiptCount == 0
+    reusedBy:
+      - Invoice_Void
+    version: "1.0"
+
+  - id: RULE-INVOICE-TAXRATE-CONSISTENT
+    name: 开票税率一致性
+    ruleType: VALIDATION
+    description: 判断开票税率是否等于合同税率
+    inputParams:
+      - name: contractTaxRate
+        type: Decimal
+        sourceField: Contract.taxRate
+        required: true
+      - name: invoiceTaxRate
+        type: Decimal
+        sourceField: Invoice.invoiceTaxRate
+        required: true
+    outputType: Boolean
+    expression: |
+      invoiceTaxRate == contractTaxRate
+    reusedBy:
+      - Invoice_SaveAsDraft
+      - Invoice_Submit
+      - Invoice_Resubmit
+    version: "1.0"
+
+  - id: RULE-APPROVAL-SOD
+    name: 提交审批职责分离
+    ruleType: VALIDATION
+    description: 判断当前审批人是否不是该业务记录的提交人
+    inputParams:
+      - name: submitterId
+        type: String
+        sourceField: Contract.registrantId
+        required: true
+      - name: approverId
+        type: String
+        sourceField: Actor.actorId
+        required: true
+    outputType: Boolean
+    expression: |
+      approverId != submitterId
+    reusedBy:
+      - Contract_ApproveFinance
+      - Contract_ApproveGeneralManager
+      - Invoice_ApproveFinance
+    version: "1.0"
+
+  - id: RULE-CONTRACT-SETTLEMENT
+    name: 合同结清资格判定
+    ruleType: VALIDATION
+    description: 判断所有付款阶段是否均已足额开票，且所有已批准未作废开票均已全部收齐
+    inputParams:
+      - name: allStagesFullyInvoiced
+        type: Boolean
+        sourceField: PaymentStage.invoiceStatus
+        required: true
+      - name: allInvoicesFullyReceived
+        type: Boolean
+        sourceField: Invoice.receivedFlag
+        required: true
+    outputType: Boolean
+    expression: |
+      allStagesFullyInvoiced == true AND allInvoicesFullyReceived == true
+    reusedBy:
+      - PaymentStage_UpdateInvoiceStatus
+      - Invoice_UpdateReceiptStatus
+      - Contract_UpdateSettlementStatus
+    version: "1.0"
+
+  - id: RULE-ALLOCATION-CONTRACT-CONSISTENT
+    name: 分摊所属合同一致性
+    ruleType: VALIDATION
+    description: 判断分摊记录、开票和付款阶段是否属于同一合同
+    inputParams:
+      - name: invoiceContractId
+        type: String
+        sourceField: Invoice.contractId
+        required: true
+      - name: allocationContractId
+        type: String
+        sourceField: InvoiceStageAllocation.contractId
+        required: true
+    outputType: Boolean
+    expression: |
+      allocationContractId == invoiceContractId
+    reusedBy:
+      - Invoice_SaveAsDraft
+      - Invoice_Submit
+      - Invoice_Resubmit
+    version: "1.0"
+
+  - id: RULE-RECEIPT-CONTRACT-CONSISTENT
+    name: 收款所属合同一致性
+    ruleType: VALIDATION
+    description: 判断收款所选合同是否等于对应开票所属合同
+    inputParams:
+      - name: receiptContractId
+        type: String
+        sourceField: Receipt.contractId
+        required: true
+      - name: invoiceContractId
+        type: String
+        sourceField: Invoice.contractId
+        required: true
+    outputType: Boolean
+    expression: |
+      receiptContractId == invoiceContractId
+    reusedBy:
+      - Receipt_Record
+    version: "1.0"
+
+  - id: RULE-OWNER-DEPT-CONSISTENT
+    name: 责任人部门一致性
+    ruleType: VALIDATION
+    description: 判断责任人所属部门是否等于合同所属部门
+    inputParams:
+      - name: ownerDepartmentId
+        type: String
+        sourceField: Employee.departmentId
+        required: true
+      - name: contractDepartmentId
+        type: String
+        sourceField: Contract.departmentId
+        required: true
+    outputType: Boolean
+    expression: |
+      ownerDepartmentId == contractDepartmentId
+    reusedBy:
+      - Contract_SaveAsDraft
+      - Contract_Submit
+      - Contract_Resubmit
+    version: "1.0"

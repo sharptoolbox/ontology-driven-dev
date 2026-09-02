@@ -1,0 +1,14 @@
+# Local secrets
+.env
+.env.*
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Frontend dependencies and generated build output
+frontend/node_modules/
+frontend/dist/
+
+# The sample SQLite database is intentionally versioned as test data.
+!backend/data/app.db
