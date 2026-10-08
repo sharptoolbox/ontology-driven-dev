@@ -1,0 +1,47 @@
+# M5 主体模型 - 客户示例域
+model_type: ACTOR
+version: "1.0"
+domain: "客户管理"
+
+roles:
+  - roleId: ROLE-ADMIN
+    name: 系统管理员
+    permissions: ["*"]
+  - roleId: ROLE-SALES
+    name: 业务人员
+    permissions:
+      - PERM-CUSTOMER-SAVE
+      - PERM-CUSTOMER-SUBMIT
+      - PERM-CUSTOMER-QUERY
+  - roleId: ROLE-CUSTOMER-MANAGER
+    name: 客户经理
+    permissions:
+      - PERM-CUSTOMER-APPROVE-MANAGER
+      - PERM-CUSTOMER-QUERY
+  - roleId: ROLE-DEPT-GM
+    name: 部门总经理
+    permissions:
+      - PERM-CUSTOMER-APPROVE-GM
+      - PERM-CUSTOMER-QUERY
+
+permissions:
+  - permissionId: PERM-CUSTOMER-SAVE
+    targetType: BEHAVIOR
+    targetRef: Customer_SaveAsDraft
+    dataScope: ALL
+  - permissionId: PERM-CUSTOMER-SUBMIT
+    targetType: BEHAVIOR
+    targetRef: Customer_Submit
+    dataScope: ALL
+  - permissionId: PERM-CUSTOMER-QUERY
+    targetType: BEHAVIOR
+    targetRef: Customer_QueryList
+    dataScope: ALL
+  - permissionId: PERM-CUSTOMER-APPROVE-MANAGER
+    targetType: BEHAVIOR
+    targetRef: Customer_ApproveManager
+    dataScope: ALL
+  - permissionId: PERM-CUSTOMER-APPROVE-GM
+    targetType: BEHAVIOR
+    targetRef: Customer_ApproveGM
+    dataScope: ALL

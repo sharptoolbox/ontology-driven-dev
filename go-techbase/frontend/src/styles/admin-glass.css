@@ -1,0 +1,912 @@
+/* 视觉体系移植自 gopherforge (https://github.com/SuperiorChuo/gopherforge) MIT License,适配 OPIC 技术底座。
+   管理控制台玻璃系统(深空暗色 + 白蓝亮色双主题)。
+   作用域:所有选择器统一加 [data-glass] 前缀;CSS 变量定义在 [data-glass] 上而非 :root。
+   [data-glass][data-theme] 现统一挂在 App 根节点(见 App.tsx)并镜像到 document.body
+   (供 Modal/Drawer/Dropdown/message 等 Portal 弹层命中),控制台与用户工作台共用同一作用域;
+   登录页/403 品牌页内 login.css 以更高优先级覆盖,视觉不受影响。 */
+
+/* ===== 变量:暗色为默认,亮色在 [data-glass][data-theme='light'] 覆盖 ===== */
+[data-glass] {
+  --app-bg: #0a0b14;
+  --sider-gradient: linear-gradient(180deg, #0e1020 0%, #090a12 100%);
+  /* 动效/玻璃参数 */
+  --dur-fast: 0.18s;
+  --dur-mid: 0.3s;
+  --dur-slow: 0.55s;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --blur-glass: blur(18px) saturate(1.35);
+
+  /* 语义色 */
+  --c-primary: #6366f1;
+  --c-success: #34d399;
+  --c-success-strong: #10b981;
+  --c-warning: #fbbf24;
+  --c-orange: #fb923c;
+  --c-error: #f87171;
+  --c-error-strong: #ef4444;
+  --c-purple: #a78bfa;
+  --c-cyan: #22d3ee;
+  --c-gold: #fbbf24;
+  --text-on-accent: #fff;
+  --text-secondary: rgba(148, 163, 184, 0.85);
+  --text-tertiary: rgba(148, 163, 184, 0.6);
+  --text-disabled: rgba(148, 163, 184, 0.4);
+  --card-bg: rgba(18, 20, 34, 0.6);
+  /* 页面级自绘容器(设计器/趋势卡等)取用 */
+  --og-surface: rgba(18, 20, 34, 0.6);
+  --og-surface-border: rgba(148, 163, 184, 0.12);
+  --og-surface-2: rgba(255, 255, 255, 0.04);
+  --og-divider: rgba(148, 163, 184, 0.12);
+  --og-text-strong: rgba(226, 232, 240, 0.92);
+  --og-text: rgba(226, 232, 240, 0.88);
+  --og-text-secondary: rgba(148, 163, 184, 0.8);
+  --og-primary: #6366f1;
+
+  /* 玻璃噪点:SVG feTurbulence 内联,暗色颗粒略重 */
+  --glass-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+[data-glass][data-theme='light'] {
+  --app-bg: #edf3fb;
+  --sider-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(242, 247, 255, 0.8) 100%);
+  --c-primary: #2563eb;
+  --c-success: #059669;
+  --c-success-strong: #047857;
+  --c-warning: #d97706;
+  --c-orange: #ea580c;
+  --c-error: #dc2626;
+  --c-error-strong: #b91c1c;
+  --c-purple: #7c3aed;
+  --c-cyan: #0891b2;
+  --c-gold: #b45309;
+  --text-secondary: rgba(71, 85, 105, 0.9);
+  --text-tertiary: rgba(100, 116, 139, 0.75);
+  --text-disabled: rgba(148, 163, 184, 0.8);
+  --card-bg: rgba(255, 255, 255, 0.72);
+  --og-surface: rgba(255, 255, 255, 0.72);
+  --og-surface-border: rgba(15, 23, 42, 0.06);
+  --og-surface-2: rgba(15, 23, 42, 0.03);
+  --og-divider: rgba(15, 23, 42, 0.08);
+  --og-text-strong: #0f172a;
+  --og-text: rgba(15, 23, 42, 0.88);
+  --og-text-secondary: #64748b;
+  --og-primary: #2563eb;
+  --glass-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.03'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== 选区 / 焦点 / 滚动条(仅 [data-glass] 子树) ===== */
+[data-glass] ::selection {
+  background: rgba(99, 102, 241, 0.45);
+  color: #fff;
+}
+
+[data-glass][data-theme='light'] ::selection {
+  background: rgba(37, 99, 235, 0.2);
+  color: #0f172a;
+}
+
+[data-glass] :focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.7);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+[data-glass][data-theme='light'] :focus-visible {
+  outline-color: rgba(37, 99, 235, 0.6);
+}
+
+[data-glass] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-glass] ::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.28);
+  border-radius: 8px;
+}
+
+[data-glass] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.5);
+}
+
+[data-glass] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-glass][data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(37, 99, 235, 0.25);
+}
+
+[data-glass][data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(37, 99, 235, 0.45);
+}
+
+/* ===== 数字排版:等宽数字 ===== */
+[data-glass] .stat-card-value,
+[data-glass] .ant-table-tbody,
+[data-glass] .ant-pagination,
+[data-glass] .trend-count {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* ============================================================
+   液态玻璃质感:边缘受光(rim) + 曲面反光(dome) + 透镜(lens)
+   ============================================================ */
+
+/* 透镜:更强饱和 + 微增亮,玻璃后的颜色像被折射得更鲜 */
+[data-glass] .ant-card {
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
+  /* 边缘受光:上缘亮线、左右微光、下缘弱反光 —— 玻璃的"厚度" */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 1px 0 0 rgba(255, 255, 255, 0.04),
+    inset -1px 0 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.025),
+    0 16px 40px rgba(0, 0, 0, 0.35);
+  border-color: rgba(148, 163, 184, 0.12) !important;
+}
+
+[data-glass][data-theme='light'] .ant-card {
+  backdrop-filter: blur(22px) saturate(1.9) brightness(1.03);
+  -webkit-backdrop-filter: blur(22px) saturate(1.9) brightness(1.03);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    inset 1px 0 0 rgba(255, 255, 255, 0.55),
+    inset -1px 0 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.35),
+    0 12px 34px rgba(37, 99, 235, 0.1);
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(15, 23, 42, 0.07) !important;
+}
+
+/* 卡片顶部微高光线 */
+[data-glass] .ant-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14%;
+  right: 14%;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.28), transparent);
+  z-index: 1;
+}
+
+[data-glass][data-theme='light'] .ant-card::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+}
+
+/* 曲面反光 + 指针高光 + 噪点,三层合一(::after) */
+[data-glass] .ant-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(240px circle at var(--lgx, -400px) var(--lgy, -400px), rgba(165, 180, 252, 0.09), transparent 60%),
+    radial-gradient(ellipse 130% 70% at 50% -30%, rgba(255, 255, 255, 0.06), transparent 55%),
+    var(--glass-noise);
+}
+
+[data-glass][data-theme='light'] .ant-card::after {
+  background:
+    radial-gradient(240px circle at var(--lgx, -400px) var(--lgy, -400px), rgba(255, 255, 255, 0.35), transparent 60%),
+    radial-gradient(ellipse 130% 70% at 50% -30%, rgba(255, 255, 255, 0.4), transparent 55%),
+    var(--glass-noise);
+}
+
+/* 指针高光点亮态 */
+[data-glass] .ant-card.is-pointer-lit {
+  /* 占位:光点由 ::after 内 var(--lgx) 驱动 */
+}
+
+/* 统计卡悬浮时保留边缘受光 */
+[data-glass] .stat-card:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 18px 44px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(129, 140, 248, 0.12),
+    0 0 32px rgba(99, 102, 241, 0.14);
+}
+
+[data-glass][data-theme='light'] .stat-card:hover {
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    0 18px 44px rgba(37, 99, 235, 0.16),
+    0 0 0 1px rgba(37, 99, 235, 0.08);
+}
+
+/* hero 面板同样上厚度 */
+[data-glass] .dash-hero {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+    0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+[data-glass][data-theme='light'] .dash-hero {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.15),
+    0 16px 40px rgba(37, 99, 235, 0.3);
+}
+
+/* ===== 主按钮:玻璃药丸 ===== */
+[data-glass] .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+    0 4px 14px rgba(99, 102, 241, 0.35) !important;
+}
+
+[data-glass][data-theme='light'] .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 4px 14px rgba(37, 99, 235, 0.3) !important;
+}
+
+[data-glass] .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+[data-glass] .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled):active {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+/* 物理触觉微交互 */
+[data-glass] .ant-btn:not(:disabled):active,
+[data-glass] .app-trigger:active {
+  transform: scale(0.972) !important;
+  transition: transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* ===== 输入框玻璃化 ===== */
+[data-glass] .ant-input-affix-wrapper,
+[data-glass] .ant-input-outlined,
+[data-glass] .ant-input,
+[data-glass] .ant-input-number,
+[data-glass] .ant-select .ant-select-selector,
+[data-glass] .ant-picker,
+[data-glass] .ant-input-number-affix-wrapper {
+  backdrop-filter: blur(8px) saturate(1.2);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+[data-glass][data-theme='light'] .ant-input-affix-wrapper:not(.ant-input-affix-wrapper-disabled),
+[data-glass][data-theme='light'] .ant-input:not(:disabled),
+[data-glass][data-theme='light'] .ant-input-number:not(.ant-input-number-disabled),
+[data-glass][data-theme='light'] .ant-select:not(.ant-select-disabled) .ant-select-selector,
+[data-glass][data-theme='light'] .ant-picker:not(.ant-picker-disabled) {
+  background: rgba(255, 255, 255, 0.7) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-glass] .ant-input:focus,
+[data-glass] .ant-input-focused,
+[data-glass] .ant-input-affix-wrapper:focus,
+[data-glass] .ant-input-affix-wrapper-focused,
+[data-glass] .ant-select-focused .ant-select-selector {
+  box-shadow:
+    0 0 0 2px rgba(99, 102, 241, 0.22),
+    0 2px 10px rgba(99, 102, 241, 0.14) !important;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+[data-glass][data-theme='light'] .ant-input:focus,
+[data-glass][data-theme='light'] .ant-input-focused,
+[data-glass][data-theme='light'] .ant-input-affix-wrapper:focus,
+[data-glass][data-theme='light'] .ant-input-affix-wrapper-focused,
+[data-glass][data-theme='light'] .ant-select-focused .ant-select-selector {
+  box-shadow:
+    0 0 0 2px rgba(37, 99, 235, 0.18),
+    0 2px 10px rgba(37, 99, 235, 0.1) !important;
+}
+
+/* ===== Modal 弹窗:透镜 + 顶部弧面高光 + 遮罩玻璃 ===== */
+[data-glass] .ant-modal .ant-modal-content {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  backdrop-filter: blur(24px) saturate(1.5) brightness(1.03);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5) brightness(1.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+[data-glass] .ant-modal .ant-modal-content::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 130% 60% at 50% -30%, rgba(255, 255, 255, 0.05), transparent 55%),
+    var(--glass-noise);
+}
+
+[data-glass] .ant-modal .ant-modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.6), transparent);
+}
+
+[data-glass] .ant-modal-mask {
+  backdrop-filter: blur(6px) saturate(0.85);
+  -webkit-backdrop-filter: blur(6px) saturate(0.85);
+  background: rgba(10, 11, 20, 0.55) !important;
+}
+
+[data-glass] .ant-modal .ant-modal-header,
+[data-glass] .ant-drawer .ant-drawer-header {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+[data-glass] .ant-modal .ant-modal-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+[data-glass][data-theme='light'] .ant-modal .ant-modal-content {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-glass][data-theme='light'] .ant-modal .ant-modal-header {
+  background: transparent !important;
+}
+
+[data-glass][data-theme='light'] .ant-modal-mask {
+  background: rgba(15, 23, 42, 0.28) !important;
+}
+
+[data-glass] .ant-modal .ant-modal-close,
+[data-glass] .ant-drawer .ant-drawer-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+[data-glass] .ant-modal .ant-modal-close:hover,
+[data-glass] .ant-drawer .ant-drawer-close:hover {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+/* ===== Drawer 抽屉:液态玻璃 ===== */
+[data-glass] .ant-drawer .ant-drawer-content {
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(24px) saturate(1.5) brightness(1.03);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5) brightness(1.03);
+  background: rgba(15, 16, 32, 0.72) !important;
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-glass] .ant-drawer-mask {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+[data-glass] .ant-drawer .ant-drawer-footer {
+  border-top-color: rgba(148, 163, 184, 0.16);
+}
+
+[data-glass][data-theme='light'] .ant-drawer .ant-drawer-content {
+  background: rgba(255, 255, 255, 0.82) !important;
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.9),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* ===== Tooltip / Dropdown / Select 面板 ===== */
+[data-glass] .ant-tooltip .ant-tooltip-inner {
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-glass] .ant-dropdown-menu,
+[data-glass] .ant-select-dropdown,
+[data-glass] .ant-picker-dropdown .ant-picker-panel-container,
+[data-glass] .ant-popover-inner {
+  backdrop-filter: blur(20px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.8) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 16px 40px rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+}
+
+[data-glass][data-theme='light'] .ant-dropdown-menu,
+[data-glass][data-theme='light'] .ant-select-dropdown,
+[data-glass][data-theme='light'] .ant-picker-dropdown .ant-picker-panel-container,
+[data-glass][data-theme='light'] .ant-popover-inner {
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    0 12px 32px rgba(37, 99, 235, 0.12) !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+/* ===== Table:表头玻璃 + 行 hover 内衬光 ===== */
+[data-glass] .ant-table {
+  background: transparent !important;
+}
+
+[data-glass] .ant-table-thead > tr > th {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.03) !important;
+  box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.14);
+  font-size: 12.5px !important;
+  letter-spacing: 1px;
+  font-weight: 550 !important;
+}
+
+[data-glass][data-theme='light'] .ant-table-thead > tr > th {
+  background: rgba(248, 250, 252, 0.92) !important;
+  color: #475569 !important;
+  border-bottom-color: rgba(15, 23, 42, 0.06) !important;
+  box-shadow: inset 0 -1px 0 rgba(15, 23, 42, 0.06);
+}
+
+[data-glass] .ant-table-tbody > tr > td {
+  padding-block: 13px !important;
+}
+
+[data-glass][data-theme='light'] .ant-table-tbody > tr > td {
+  border-bottom-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-glass] .ant-table-tbody > tr:nth-child(even) > td {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+[data-glass][data-theme='light'] .ant-table-tbody > tr:nth-child(even) > td {
+  background: rgba(241, 245, 249, 0.45);
+}
+
+[data-glass] .ant-table-tbody > tr:hover > td {
+  background: rgba(99, 102, 241, 0.06) !important;
+  box-shadow: inset 0 1px 0 rgba(99, 102, 241, 0.1);
+}
+
+[data-glass][data-theme='light'] .ant-table-tbody > tr:hover > td {
+  background: rgba(239, 246, 255, 0.85) !important;
+  box-shadow: inset 0 1px 0 rgba(37, 99, 235, 0.08);
+}
+
+/* Ant Design 6 固定列底色(玻璃上不能露出实底) */
+[data-glass] .ant-table-thead > tr > th.ant-table-cell-fix,
+[data-glass] .ant-table-tbody > tr > td.ant-table-cell-fix {
+  background: rgba(16, 18, 32, 0.95) !important;
+}
+
+[data-glass] .ant-table-tbody > tr:hover > td.ant-table-cell-fix {
+  background: rgba(26, 28, 48, 0.95) !important;
+}
+
+[data-glass][data-theme='light'] .ant-table-thead > tr > th.ant-table-cell-fix,
+[data-glass][data-theme='light'] .ant-table-tbody > tr > td.ant-table-cell-fix {
+  background: #fff !important;
+}
+
+[data-glass][data-theme='light'] .ant-table-tbody > tr:hover > td.ant-table-cell-fix {
+  background: rgba(59, 130, 246, 0.07) !important;
+}
+
+[data-glass] .ant-table-wrapper .ant-pagination {
+  margin-top: 20px !important;
+}
+
+/* ===== 分页器:胶囊玻璃 + 当前页渐变 ===== */
+[data-glass] .ant-pagination .ant-pagination-item,
+[data-glass] .ant-pagination .ant-pagination-prev,
+[data-glass] .ant-pagination .ant-pagination-next,
+[data-glass] .ant-pagination .ant-pagination-jump-prev,
+[data-glass] .ant-pagination .ant-pagination-jump-next {
+  backdrop-filter: blur(6px) saturate(1.2);
+  -webkit-backdrop-filter: blur(6px) saturate(1.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[data-glass] .ant-pagination .ant-pagination-item-active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(124, 58, 237, 0.85)) !important;
+  border-color: transparent !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+[data-glass] .ant-pagination .ant-pagination-item-active a {
+  color: #fff !important;
+}
+
+[data-glass][data-theme='light'] .ant-pagination .ant-pagination-item,
+[data-glass][data-theme='light'] .ant-pagination .ant-pagination-prev,
+[data-glass][data-theme='light'] .ant-pagination .ant-pagination-next,
+[data-glass][data-theme='light'] .ant-pagination .ant-pagination-jump-prev,
+[data-glass][data-theme='light'] .ant-pagination .ant-pagination-jump-next {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+[data-glass][data-theme='light'] .ant-pagination .ant-pagination-item-active {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+[data-glass] .ant-pagination .ant-pagination-disabled {
+  opacity: 0.42;
+}
+
+/* ===== Tag / Alert:玻璃胶囊 ===== */
+[data-glass] .ant-tag {
+  backdrop-filter: blur(6px) saturate(1.3);
+  -webkit-backdrop-filter: blur(6px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-glass] .ant-alert {
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-glass][data-theme='light'] .ant-tag {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+[data-glass][data-theme='light'] .ant-alert {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+/* ===== Segmented ===== */
+[data-glass] .ant-segmented {
+  max-width: 100%;
+  backdrop-filter: blur(8px) saturate(1.3);
+  -webkit-backdrop-filter: blur(8px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ===== Switch:开启后轨道渐变,手柄玻璃液滴 ===== */
+[data-glass] .ant-switch {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+[data-glass] .ant-switch.ant-switch-checked {
+  background: linear-gradient(100deg, #6366f1 0%, #7c3aed 55%, #6366f1 100%) !important;
+  background-size: 220% 100% !important;
+  animation: og-liquid-btn-flow 7s linear infinite;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 2px 10px rgba(99, 102, 241, 0.4);
+}
+
+[data-glass][data-theme='light'] .ant-switch.ant-switch-checked {
+  background: linear-gradient(100deg, #2563eb 0%, #0ea5e9 55%, #2563eb 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 2px 10px rgba(37, 99, 235, 0.35);
+}
+
+/* ===== 表单细节 ===== */
+[data-glass] .ant-form-inline .ant-form-item {
+  margin-bottom: 8px;
+}
+
+[data-glass] .ant-form-item-explain-error {
+  animation: og-form-error-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes og-form-error-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-glass][data-theme='light'] .ant-form-item .ant-form-item-label > label {
+  color: #334155;
+}
+
+/* ===== 消息浮层:玻璃胶囊(静态 message 走默认主题,这里兜底玻璃化) ===== */
+[data-glass] .ant-message .ant-message-notice-content {
+  border-radius: 12px;
+  backdrop-filter: blur(28px) saturate(1.6) brightness(1.05);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6) brightness(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 12px 36px rgba(0, 0, 0, 0.4),
+    0 0 32px rgba(99, 102, 241, 0.1) !important;
+}
+
+[data-glass][data-theme='light'] .ant-message .ant-message-notice-content {
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.9),
+    0 12px 36px rgba(37, 99, 235, 0.14) !important;
+}
+
+/* ===== 侧栏折叠后的子菜单弹出面板 ===== */
+[data-glass] .ant-menu-submenu-popup > .ant-menu {
+  backdrop-filter: blur(20px) saturate(1.5) brightness(1.03);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5) brightness(1.03);
+  background: rgba(24, 26, 46, 0.85) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 12px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-glass][data-theme='light'] .ant-menu-submenu-popup > .ant-menu {
+  background: rgba(255, 255, 255, 0.82) !important;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.9),
+    0 12px 40px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* ===== 液态流动层:渐变流动 ===== */
+[data-glass] .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled) {
+  background-image: linear-gradient(100deg, #6366f1 0%, #7c3aed 45%, #6366f1 90%) !important;
+  background-size: 220% 100% !important;
+  animation: og-liquid-btn-flow 7s linear infinite;
+  border: none;
+}
+
+[data-glass][data-theme='light'] .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled) {
+  background-image: linear-gradient(100deg, #2563eb 0%, #0ea5e9 45%, #2563eb 90%) !important;
+}
+
+@keyframes og-liquid-btn-flow {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+/* ===== 路由切换 fade-in ===== */
+@keyframes og-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-fade-in {
+  animation: og-fade-in-up 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 列表页通用进场:根层卡片依次浮出(--i 编排) */
+[data-glass] .page-fade-in > div > .ant-card {
+  animation: og-glass-rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+[data-glass] .page-fade-in > div > .ant-card:nth-child(2) {
+  --i: 1;
+}
+
+[data-glass] .page-fade-in > div > .ant-card:nth-child(3) {
+  --i: 2;
+}
+
+[data-glass] .page-fade-in > div > .ant-card:nth-child(n + 4) {
+  --i: 3;
+}
+
+@keyframes og-glass-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== 环境内光:固定两团微弱色斑 ===== */
+.app-content-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 45% at 12% -5%, rgba(79, 70, 229, 0.14), transparent 60%),
+    radial-gradient(ellipse 50% 45% at 95% 110%, rgba(124, 58, 237, 0.1), transparent 60%);
+}
+
+[data-glass][data-theme='light'] .app-content-glow {
+  background:
+    radial-gradient(ellipse 55% 45% at 12% -5%, rgba(59, 130, 246, 0.14), transparent 60%),
+    radial-gradient(ellipse 50% 45% at 95% 110%, rgba(14, 165, 233, 0.1), transparent 60%);
+}
+
+/* 环境光升级为流动光斑 */
+.app-content-glow::before,
+.app-content-glow::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  will-change: transform;
+}
+
+.app-content-glow::before {
+  width: 55vw;
+  height: 55vw;
+  top: -25vw;
+  left: -15vw;
+  background: radial-gradient(circle at 35% 35%, rgba(79, 70, 229, 0.16), transparent 65%);
+  animation: og-drift-1 30s ease-in-out infinite alternate;
+}
+
+.app-content-glow::after {
+  width: 48vw;
+  height: 48vw;
+  bottom: -22vw;
+  right: -12vw;
+  background: radial-gradient(circle at 40% 40%, rgba(124, 58, 237, 0.13), transparent 65%);
+  animation: og-drift-2 36s ease-in-out infinite alternate;
+}
+
+@keyframes og-drift-1 {
+  to {
+    transform: translate(14vw, 10vh) scale(1.15);
+  }
+}
+
+@keyframes og-drift-2 {
+  to {
+    transform: translate(-12vw, -8vh) scale(0.9);
+  }
+}
+
+[data-glass][data-theme='light'] .app-content-glow::before {
+  background: radial-gradient(circle at 35% 35%, rgba(59, 130, 246, 0.17), transparent 65%);
+}
+
+[data-glass][data-theme='light'] .app-content-glow::after {
+  background: radial-gradient(circle at 40% 40%, rgba(14, 165, 233, 0.14), transparent 65%);
+}
+
+/* ===== 主题感知工具类 ===== */
+[data-glass] .card-title-icon {
+  margin-right: 8px;
+  color: #818cf8;
+}
+
+[data-glass][data-theme='light'] .card-title-icon {
+  color: #2563eb;
+}
+
+[data-glass] .card-title-icon-warn {
+  margin-right: 8px;
+  color: #fbbf24;
+}
+
+[data-glass][data-theme='light'] .card-title-icon-warn {
+  color: #d97706;
+}
+
+[data-glass] .live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: 1px;
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.75);
+  animation: og-live-pulse 2.4s ease-in-out infinite;
+}
+
+[data-glass][data-theme='light'] .live-dot {
+  background: #059669;
+  box-shadow: 0 0 8px rgba(5, 150, 105, 0.55);
+}
+
+@keyframes og-live-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ===== 减少动效:装饰性动画全部静止 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-in,
+  .login-shell,
+  .login-aurora,
+  .dash-hero.liquid-dash.is-alive,
+  .dash-hero.liquid-dash.is-alive::before,
+  .dash-hero.liquid-dash.is-alive::after,
+  .dash-hero.liquid-dash.is-alive > .liquid-sheen i,
+  .ant-card.liquid-dash-stat:hover .liquid-sheen i,
+  .ant-card.liquid-dash-panel:hover .liquid-sheen i,
+  [data-glass] .ant-card,
+  [data-glass] .ant-btn-primary:not(.ant-btn-dangerous):not(:disabled),
+  [data-glass] .ant-switch.ant-switch-checked {
+    animation: none !important;
+  }
+
+  .dash-hero.liquid-dash.is-alive {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ===== 流程设计器:玻璃卡容器(色值走变量,双主题自适应) ===== */
+[data-glass] .flow-designer {
+  background: var(--og-surface);
+  border: 1px solid var(--og-surface-border);
+  border-radius: 14px;
+  backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 16px 40px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+[data-glass][data-theme='light'] .flow-designer {
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    0 12px 34px rgba(37, 99, 235, 0.1);
+}
+
+[data-glass] .flow-designer-toolbar {
+  border-bottom: 1px solid var(--og-divider);
+}
+
+[data-glass] .flow-designer-palette {
+  border-right: 1px solid var(--og-divider);
+}
+
+[data-glass] .flow-designer-palette-item {
+  border: 1px solid var(--og-surface-border);
+  background: var(--og-surface-2);
+  color: var(--og-text);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+[data-glass] .flow-designer-palette-item:hover {
+  border-color: rgba(129, 140, 248, 0.45);
+  background: rgba(99, 102, 241, 0.08);
+}

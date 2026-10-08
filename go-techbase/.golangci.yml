@@ -1,0 +1,13 @@
+version: "2"
+linters:
+  enable:
+    - govet
+    - ineffassign
+    - misspell
+    - staticcheck
+    - unused
+exclusions:
+  paths:
+    - frontend
+    - bin
+    - log

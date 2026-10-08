@@ -1,0 +1,246 @@
+/* 视觉体系移植自 gopherforge (https://github.com/SuperiorChuo/gopherforge) MIT License,适配 OPIC 技术底座。
+   列表页通用:TableToolbar 玻璃工具条 / StatusPill 状态胶囊(呼吸点)。
+   所有选择器统一加 [data-glass] 前缀。 */
+
+/* ===== TableToolbar:玻璃工具条 ===== */
+[data-glass] .table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(18, 20, 34, 0.35);
+  backdrop-filter: blur(16px) saturate(1.35);
+  -webkit-backdrop-filter: blur(16px) saturate(1.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+[data-glass][data-theme='light'] .table-toolbar {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 8px 22px rgba(37, 99, 235, 0.06);
+}
+
+[data-glass] .table-toolbar-title {
+  display: flex;
+  flex: 1 1 320px;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+[data-glass][data-theme='light'] .table-toolbar-title {
+  color: #0f172a;
+}
+
+/* 无徽章图标时用渐变竖线 */
+[data-glass] .table-toolbar-title::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #818cf8, #4f46e5);
+}
+
+[data-glass][data-theme='light'] .table-toolbar-title::before {
+  background: linear-gradient(180deg, #60a5fa, #2563eb);
+}
+
+/* 有徽章图标时去掉竖线,改用玻璃徽章 */
+[data-glass] .table-toolbar-title-iconed::before {
+  display: none;
+}
+
+[data-glass] .table-toolbar-badge {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1.5px 0 rgba(0, 0, 0, 0.2),
+    0 6px 16px var(--badge-glow, rgba(79, 70, 229, 0.4)),
+    0 0 24px var(--badge-glow, rgba(79, 70, 229, 0.25));
+}
+
+[data-glass][data-theme='light'] .table-toolbar-badge {
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 6px 16px var(--badge-glow, rgba(37, 99, 235, 0.35)),
+    0 0 20px var(--badge-glow, rgba(37, 99, 235, 0.18));
+}
+
+[data-glass] .table-toolbar-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+[data-glass] .table-toolbar-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0;
+}
+
+[data-glass] .table-toolbar-desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+[data-glass][data-theme='light'] .table-toolbar-desc {
+  color: #64748b;
+}
+
+[data-glass] .table-toolbar-extra {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 标题旁的数量徽标 */
+[data-glass] .table-count {
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.28);
+}
+
+[data-glass][data-theme='light'] .table-count {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
+/* ===== StatusPill:呼吸点 + 玻璃底 ===== */
+[data-glass] .status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  backdrop-filter: blur(6px) saturate(1.3);
+  -webkit-backdrop-filter: blur(6px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+[data-glass][data-theme='light'] .status-pill {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+[data-glass] .status-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+[data-glass] .status-pill-dot-pulse {
+  animation: og-live-pulse 2.4s ease-in-out infinite, og-pill-halo 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes og-pill-halo {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 4.5px rgba(52, 211, 153, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+  }
+}
+
+[data-glass] .status-pill-success {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.09);
+  border: 1px solid rgba(52, 211, 153, 0.26);
+}
+
+[data-glass] .status-pill-muted {
+  color: rgba(148, 163, 184, 0.85);
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+[data-glass] .status-pill-danger {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.09);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+[data-glass] .status-pill-info {
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.11);
+  border: 1px solid rgba(129, 140, 248, 0.3);
+}
+
+[data-glass] .status-pill-warning {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.09);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+}
+
+[data-glass][data-theme='light'] .status-pill-success {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.06);
+  border-color: rgba(5, 150, 105, 0.24);
+}
+
+[data-glass][data-theme='light'] .status-pill-muted {
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.06);
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+[data-glass][data-theme='light'] .status-pill-danger {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.05);
+  border-color: rgba(220, 38, 38, 0.24);
+}
+
+[data-glass][data-theme='light'] .status-pill-info {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.06);
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
+[data-glass][data-theme='light'] .status-pill-warning {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.06);
+  border-color: rgba(217, 119, 6, 0.24);
+}

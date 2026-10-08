@@ -1,0 +1,72 @@
+# 数据栈(gopherforge docker-compose.infra.yml 模式):数据与应用分离,重建应用不触碰数据
+name: go-techbase-infra
+
+networks:
+  go-techbase-net:
+    name: go-techbase-net
+    external: false
+
+volumes:
+  pg-data:
+  redis-data:
+  zitadel-data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: go-techbase-postgres
+    environment:
+      TZ: Asia/Shanghai
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-go_techbase}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-go_techbase}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [go-techbase-net]
+
+  redis:
+    image: redis:8-alpine
+    container_name: go-techbase-redis
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "volatile-lru"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [go-techbase-net]
+
+  # ZITADEL 统一身份(OPIC-零信任安全中心集成;演示环境 http://55.32.170.170:8081)
+  zitadel:
+    image: ghcr.io/zitadel/zitadel:v2.70.0
+    container_name: go-techbase-zitadel
+    command: start-from-init --masterkey "${ZITADEL_MASTERKEY:?请在 .env 设置 ZITADEL_MASTERKEY(32字符)}" --tlsMode disabled --config /zitadel-config.yaml --steps /zitadel-config.yaml
+    environment:
+      TZ: Asia/Shanghai
+      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: ${ZITADEL_DB_PASSWORD:?请在 .env 设置 ZITADEL_DB_PASSWORD}
+      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - ./configs/zitadel-config.yaml:/zitadel-config.yaml:ro
+      - zitadel-data:/.data
+    ports:
+      - "${ZITADEL_PORT:-8081}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/debug/ready >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks: [go-techbase-net]

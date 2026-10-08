@@ -1,0 +1,811 @@
+/* 视觉体系移植自 gopherforge (https://github.com/SuperiorChuo/gopherforge) MIT License,适配 OPIC 技术底座。
+   仪表盘:hero 横幅 / 渐变统计卡墙 / 手写 CSS 趋势柱状图 / 液态玻璃涟漪。
+   所有选择器统一加 [data-glass] 前缀。 */
+
+/* ===== Hero ===== */
+[data-glass] .dash-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 16px 22px;
+  margin-bottom: 16px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.4), transparent 50%),
+    radial-gradient(circle at 100% 120%, rgba(124, 58, 237, 0.32), transparent 55%),
+    rgba(18, 20, 34, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  backdrop-filter: blur(28px) saturate(1.55);
+  -webkit-backdrop-filter: blur(28px) saturate(1.55);
+}
+
+[data-glass] .dash-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.7), transparent);
+}
+
+[data-glass] .dash-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+[data-glass] .dash-hero-greeting {
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.35px;
+  color: #fff;
+  line-height: 1.25;
+}
+
+[data-glass] .dash-hero-greeting em {
+  font-style: normal;
+  background: linear-gradient(100deg, #a5b4fc 0%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+[data-glass] .dash-hero-sub {
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+[data-glass] .dash-hero-glow {
+  position: absolute;
+  top: -48px;
+  right: -36px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(129, 140, 248, 0.26), transparent 70%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+[data-glass][data-theme='light'] .dash-hero {
+  background: linear-gradient(120deg, #2563eb 0%, #3b82f6 55%, #0ea5e9 100%);
+  border-color: transparent;
+  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.3);
+}
+
+[data-glass][data-theme='light'] .dash-hero::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+}
+
+[data-glass][data-theme='light'] .dash-hero-greeting em {
+  background: linear-gradient(100deg, #ffffff 0%, #dbeafe 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+[data-glass][data-theme='light'] .dash-hero-sub {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* ===== Hero 信息芯片 ===== */
+[data-glass] .dash-hero-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 28px;
+  min-width: 0;
+}
+
+[data-glass] .dash-hero-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+[data-glass] .hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  letter-spacing: 0.3px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(226, 232, 240, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px) saturate(1.3);
+  -webkit-backdrop-filter: blur(8px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+[data-glass] .hero-chip .anticon {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+[data-glass][data-theme='light'] .hero-chip {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ===== 快捷操作胶囊 ===== */
+[data-glass] .dash-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+[data-glass] .hero-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 15px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: rgba(226, 232, 240, 0.92);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px) saturate(1.3);
+  -webkit-backdrop-filter: blur(8px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition:
+    transform var(--dur-fast, 0.18s) var(--ease-out, ease),
+    border-color var(--dur-fast, 0.18s) ease,
+    background var(--dur-fast, 0.18s) ease,
+    box-shadow var(--dur-fast, 0.18s) ease;
+}
+
+[data-glass] .hero-action:hover {
+  transform: translateY(-2px);
+  border-color: rgba(129, 140, 248, 0.55);
+  background: linear-gradient(145deg, rgba(129, 140, 248, 0.24), rgba(99, 102, 241, 0.1));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 6px 18px rgba(79, 70, 229, 0.3);
+}
+
+[data-glass] .hero-action:active {
+  transform: translateY(0);
+}
+
+[data-glass] .hero-action .anticon {
+  font-size: 13px;
+  color: #a5b4fc;
+}
+
+[data-glass][data-theme='light'] .hero-action {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+[data-glass][data-theme='light'] .hero-action:hover {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+}
+
+[data-glass][data-theme='light'] .hero-action .anticon {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== 轨道装饰:两圈同心细环,光点沿环公转 ===== */
+[data-glass] .dash-hero-orbit {
+  position: absolute;
+  top: 50%;
+  right: 44px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+[data-glass] .orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+[data-glass] .orbit-ring-1 {
+  width: 104px;
+  height: 104px;
+  animation: og-orbit-spin 22s linear infinite;
+}
+
+[data-glass] .orbit-ring-2 {
+  width: 156px;
+  height: 156px;
+  animation: og-orbit-spin 38s linear infinite reverse;
+}
+
+[data-glass] .orbit-dot {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(199, 210, 254, 0.95);
+  box-shadow: 0 0 10px rgba(165, 180, 252, 0.9);
+}
+
+[data-glass] .orbit-dot-2 {
+  width: 4px;
+  height: 4px;
+  top: auto;
+  bottom: -2px;
+  background: rgba(125, 211, 252, 0.9);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+}
+
+@keyframes og-orbit-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+[data-glass][data-theme='light'] .orbit-ring {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+@media (max-width: 768px) {
+  [data-glass] .dash-hero-orbit {
+    display: none;
+  }
+}
+
+/* ===== 统计卡 ===== */
+[data-glass] .stat-card {
+  position: relative;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+[data-glass] .stat-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(129, 140, 248, 0.45) !important;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(129, 140, 248, 0.12),
+    0 0 32px rgba(99, 102, 241, 0.14);
+}
+
+/* 强调色以极低透明度从卡片右上角"照进"玻璃(--tint) */
+[data-glass] .stat-card.ant-card {
+  background-image: radial-gradient(ellipse 85% 70% at 100% 0%, var(--tint, transparent), transparent 65%);
+}
+
+[data-glass] .stat-card.ant-card:hover {
+  background-image:
+    radial-gradient(ellipse 85% 70% at 100% 0%, var(--tint, transparent), transparent 65%),
+    radial-gradient(ellipse 85% 70% at 100% 0%, var(--tint, transparent), transparent 65%);
+}
+
+/* 进场:依次浮出水面(--i 为卡片序号),backwards 保证 delay 期间隐藏 */
+[data-glass] .glass-rise {
+  animation: og-glass-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+[data-glass] .stat-card-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+[data-glass] .stat-card-title {
+  color: rgba(148, 163, 184, 0.8);
+  font-size: 12.5px;
+  letter-spacing: 1.5px;
+}
+
+[data-glass] .stat-card-value {
+  margin-top: 6px;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+[data-glass][data-theme='light'] .stat-card-title {
+  color: #64748b;
+}
+
+[data-glass][data-theme='light'] .stat-card-value {
+  color: #0f172a;
+}
+
+[data-glass] .stat-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  /* 图标浮雕:上缘受光 + 下缘暗边,凸玻璃徽章 */
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1.5px 0 rgba(0, 0, 0, 0.22),
+    0 8px 20px var(--icon-shadow, rgba(0, 0, 0, 0.3));
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-glass] .stat-card:hover .stat-card-icon {
+  transform: translateY(-2px) scale(1.05) rotate(-4deg);
+  box-shadow: 0 8px 24px var(--icon-shadow, rgba(99, 102, 241, 0.45));
+}
+
+[data-glass] .stat-card-foot {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 12.5px;
+  position: relative;
+  z-index: 1;
+}
+
+[data-glass] .stat-card:hover .stat-card-foot {
+  color: #a5b4fc;
+}
+
+[data-glass][data-theme='light'] .stat-card-foot {
+  border-top-color: rgba(15, 23, 42, 0.06);
+  color: #94a3b8;
+}
+
+[data-glass][data-theme='light'] .stat-card:hover {
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  box-shadow:
+    0 18px 44px rgba(37, 99, 235, 0.14),
+    0 0 0 1px rgba(37, 99, 235, 0.08);
+}
+
+[data-glass][data-theme='light'] .stat-card:hover .stat-card-foot {
+  color: #2563eb;
+}
+
+/* ===== 液态玻璃涟漪(统计卡/面板:默认安静,hover 亮涟漪) ===== */
+[data-glass] .ant-card.liquid-dash-stat,
+[data-glass] .ant-card.liquid-dash-panel {
+  overflow: hidden;
+}
+
+[data-glass] .liquid-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+
+[data-glass] .liquid-sheen i {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  height: 48%;
+  border-radius: 50%;
+  filter: blur(12px);
+  display: block;
+  opacity: 0.65;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.03) 35%,
+    rgba(165, 180, 252, 0.12) 50%,
+    rgba(255, 255, 255, 0.04) 65%,
+    transparent 100%
+  );
+}
+
+[data-glass] .liquid-sheen i:nth-child(1) {
+  top: 4%;
+}
+
+[data-glass] .liquid-sheen i:nth-child(2) {
+  top: 46%;
+  height: 40%;
+  opacity: 0.5;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(99, 102, 241, 0.07) 40%,
+    rgba(255, 255, 255, 0.09) 52%,
+    rgba(168, 85, 247, 0.07) 65%,
+    transparent 100%
+  );
+}
+
+[data-glass] .dash-hero.liquid-dash > .liquid-sheen {
+  opacity: 1;
+}
+
+[data-glass] .dash-hero.liquid-dash > .liquid-sheen i {
+  left: -10%;
+  right: -10%;
+  height: 42%;
+  opacity: 0.7;
+}
+
+[data-glass] .dash-hero.liquid-dash > .liquid-sheen i:nth-child(1) {
+  top: 6%;
+}
+
+[data-glass] .dash-hero.liquid-dash > .liquid-sheen i:nth-child(2) {
+  top: 48%;
+  height: 36%;
+  opacity: 0.55;
+}
+
+[data-glass] .ant-card.liquid-dash-stat:hover .liquid-sheen,
+[data-glass] .ant-card.liquid-dash-panel:hover .liquid-sheen {
+  opacity: 1;
+}
+
+[data-glass] .ant-card.liquid-dash-stat:hover .liquid-sheen i:nth-child(1),
+[data-glass] .ant-card.liquid-dash-panel:hover .liquid-sheen i:nth-child(1) {
+  animation: og-ripple-1 13s ease-in-out infinite;
+  opacity: 0.85;
+}
+
+[data-glass] .ant-card.liquid-dash-stat:hover .liquid-sheen i:nth-child(2),
+[data-glass] .ant-card.liquid-dash-panel:hover .liquid-sheen i:nth-child(2) {
+  animation: og-ripple-2 17s ease-in-out infinite;
+}
+
+[data-glass] .dash-hero.liquid-dash.is-alive > .liquid-sheen i:nth-child(1) {
+  animation: og-ripple-1 11s ease-in-out infinite;
+}
+
+[data-glass] .dash-hero.liquid-dash.is-alive > .liquid-sheen i:nth-child(2) {
+  animation: og-ripple-2 15s ease-in-out infinite;
+}
+
+@keyframes og-ripple-1 {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(1.02);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(16%) scaleX(1.08);
+    opacity: 0.72;
+  }
+}
+
+@keyframes og-ripple-2 {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(1.06);
+    opacity: 0.32;
+  }
+  50% {
+    transform: translateY(-12%) scaleX(1.02);
+    opacity: 0.62;
+  }
+}
+
+/* hero 慢浮 */
+[data-glass] .dash-hero.liquid-dash.is-alive {
+  animation: og-hero-float 9s ease-in-out infinite;
+}
+
+@keyframes og-hero-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.004);
+  }
+}
+
+@media (hover: none) {
+  [data-glass] .ant-card.liquid-dash-stat .liquid-sheen,
+  [data-glass] .ant-card.liquid-dash-panel .liquid-sheen {
+    opacity: 0.28;
+  }
+}
+
+/* ===== 趋势柱状图(手写 CSS) ===== */
+[data-glass] .trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  height: 220px;
+  padding: 8px 4px 0;
+}
+
+[data-glass] .trend-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+
+[data-glass] .trend-bar-area {
+  flex: 1;
+  width: 100%;
+  max-width: 42px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  cursor: pointer;
+}
+
+[data-glass] .trend-bar-running,
+[data-glass] .trend-bar-approved,
+[data-glass] .trend-bar-rejected,
+[data-glass] .trend-bar-terminated {
+  border-radius: 6px 6px 0 0;
+  transition: height 0.4s ease, box-shadow 0.2s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+[data-glass] .trend-bar-running {
+  background: linear-gradient(180deg, #818cf8, #4f46e5);
+}
+
+[data-glass] .trend-bar-approved {
+  background: linear-gradient(180deg, #34d399, #059669);
+}
+
+[data-glass] .trend-bar-rejected {
+  background: linear-gradient(180deg, #fca5a5, #ef4444);
+  margin-bottom: 2px;
+}
+
+[data-glass] .trend-bar-terminated {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.75), rgba(100, 116, 139, 0.9));
+  margin-bottom: 2px;
+}
+
+[data-glass] .trend-bar-area:hover .trend-bar-running,
+[data-glass] .trend-bar-area:hover .trend-bar-approved,
+[data-glass] .trend-bar-area:hover .trend-bar-rejected,
+[data-glass] .trend-bar-area:hover .trend-bar-terminated {
+  box-shadow: 0 0 14px rgba(129, 140, 248, 0.5);
+}
+
+[data-glass] .trend-date {
+  margin-top: 8px;
+  height: 17px;
+  line-height: 17px;
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.7);
+  white-space: nowrap;
+}
+
+[data-glass] .trend-count {
+  height: 17px;
+  line-height: 17px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(203, 213, 225, 0.75);
+  margin-bottom: 4px;
+}
+
+[data-glass][data-theme='light'] .trend-count {
+  color: #475569;
+}
+
+[data-glass][data-theme='light'] .trend-date {
+  color: #94a3b8;
+}
+
+[data-glass] .trend-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+[data-glass][data-theme='light'] .trend-legend {
+  color: #64748b;
+}
+
+[data-glass] .trend-legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+[data-glass] .trend-legend-dot-running {
+  background: #818cf8;
+}
+
+[data-glass] .trend-legend-dot-approved {
+  background: #34d399;
+}
+
+[data-glass] .trend-legend-dot-rejected {
+  background: #f87171;
+}
+
+[data-glass] .trend-legend-dot-terminated {
+  background: #94a3b8;
+}
+
+[data-glass][data-theme='light'] .trend-legend-dot-running {
+  background: #2563eb;
+}
+
+[data-glass][data-theme='light'] .trend-legend-dot-approved {
+  background: #059669;
+}
+
+[data-glass][data-theme='light'] .trend-legend-dot-rejected {
+  background: #ef4444;
+}
+
+[data-glass][data-theme='light'] .trend-legend-dot-terminated {
+  background: #94a3b8;
+}
+
+/* 天数切换胶囊(自绘按钮) */
+[data-glass] .trend-days {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(165, 180, 252, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+[data-glass] .trend-days-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  min-width: 56px;
+  height: 30px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  cursor: pointer;
+  color: #e2e8f0;
+  background: transparent;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.15s ease;
+}
+
+[data-glass] .trend-days-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-glass] .trend-days-btn:focus-visible {
+  outline: 2px solid rgba(165, 180, 252, 0.85);
+  outline-offset: 2px;
+}
+
+[data-glass] .trend-days-btn.is-active {
+  color: #fff;
+  background: linear-gradient(100deg, #6366f1 0%, #7c3aed 50%, #4f46e5 100%);
+  border-color: rgba(199, 210, 254, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 4px 14px rgba(99, 102, 241, 0.45);
+}
+
+[data-glass][data-theme='light'] .trend-days {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(37, 99, 235, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 4px 14px rgba(37, 99, 235, 0.1);
+}
+
+[data-glass][data-theme='light'] .trend-days-btn {
+  color: #334155;
+}
+
+[data-glass][data-theme='light'] .trend-days-btn:hover {
+  color: #0f172a;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+[data-glass][data-theme='light'] .trend-days-btn.is-active {
+  color: #fff;
+  background: linear-gradient(100deg, #2563eb 0%, #3b82f6 50%, #4f46e5 100%);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+/* ===== 最近实例列表 ===== */
+[data-glass] .dash-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 3px 0;
+  border-radius: 8px;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.1);
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+}
+
+[data-glass] .dash-recent-item:hover {
+  background: rgba(99, 102, 241, 0.1);
+  transform: translateX(3px);
+  border-bottom-color: transparent;
+}
+
+[data-glass][data-theme='light'] .dash-recent-item:hover {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+[data-glass] .dash-recent-item:last-child {
+  border-bottom: none;
+}
+
+[data-glass] .dash-recent-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: rgba(226, 232, 240, 0.88);
+}
+
+[data-glass][data-theme='light'] .dash-recent-title {
+  color: #334155;
+}
+
+[data-glass] .dash-recent-time {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.7);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  [data-glass] .dash-hero-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

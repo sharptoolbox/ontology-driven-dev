@@ -1,0 +1,82 @@
+# go-techbase 配置(环境变量可覆盖,优先级 env > yaml > 默认;见 .env.example)
+app:
+  name: go-techbase
+  port: "9680"
+
+log:
+  level: info
+  output: std    # std|file(file 时写 dir/go-techbase.log,按大小轮转)
+  dir: ./log
+
+# 数据库:PostgreSQL 16(Pigsty 生产集群 haproxy 5433 rw;库=opicdb,中心专属 schema 见 OPIC-DB-SCHEMA-01)
+# 本仓为脚手架:复制到中心仓后 schema 改为 o<域码小写>(如 osys);本地开发可连 docker-compose.infra.yml 栈
+database:
+  host: 192.168.3.200
+  port: 5433
+  username: postgres
+  password: postgres
+  dbname: opicdb
+  schema: otechbase
+  sslmode: disable
+  maxconns: 20
+  minconns: 5
+
+# Redis(step1 生产:opic-redis 容器,宿主回环 26379;口令见生产 .env)
+redis:
+  enabled: true
+  host: 192.168.3.200
+  port: 26379
+  password: ""
+  db: 0
+
+# ── 中心标识（隔离三件套的根，OPIC-TECH-01 v1.1）──────────────────────────────
+# fork 后改为本中心域码（小写，如 osec）——picdb schema/Temporal TaskQueue/NATS stream+主题全部随之隔离
+center_code: techbase
+
+# 事件总线(step1 NATS JetStream;容器网 nats:4222 / 宿主 14222;口令见生产 .env)
+# driver=inproc 为零依赖默认(开发/降级);生产切 nats
+# stream_name/subject_prefix 留空 = 按 center_code 派生（OPIC_<CODE> / opic.<code>.>）
+eventbus:
+  driver: inproc
+  url: nats://192.168.3.200:14222
+  username: opic
+  password: ""
+  stream_name: ""
+  subject_prefix: ""
+  max_age_days: 7
+
+# 工作流(step1 Temporal;容器网 temporal:7233 / 宿主 7233;业务命名空间 opic)
+# driver=local 为零依赖默认;生产切 temporal;task_queue 留空 = center_code
+workflow:
+  driver: local
+  address: 192.168.3.200:7233
+  namespace: opic
+  task_queue: ""
+
+# Prometheus 指标(/metrics;env METRICS_ENABLED 可覆盖)
+metrics:
+  enabled: true
+
+# 身份认证:OPIC-零信任安全中心集成的 ZITADEL
+# mode=local     本地账号密码登录(开发/单机回退,HS256 会话)
+# mode=zitadel   OIDC Authorization Code + PKCE;JWKS 验签;角色声明映射本地角色
+auth:
+  mode: local
+  jwt_secret: go-techbase-dev-secret
+  jwt_expires_hours: 12
+  allow_local_login: true
+  issuer: http://localhost:8080        # ZITADEL 地址(零信任中心 docker-compose)
+  client_id: go-techbase
+  client_secret: ""
+  redirect_url: http://localhost:9680/api/auth/callback
+  role_claim: roles                     # ZITADEL 项目角色声明名
+  auto_provision: true                  # 按 userinfo 自动建用户
+  default_role_codes: SALES             # 自动 provisioning 兜底角色
+
+# 七模型本体 YAML 目录(默认随底座 models/,应用项目可指向自己的 models/)
+ontology:
+  models_dir: models
+
+# 前端构建产物目录(空则不托管;开发期前端走 vite proxy;compose 走网关/nginx)
+frontend:
+  dist_dir: ""

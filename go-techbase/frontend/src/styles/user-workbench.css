@@ -1,0 +1,424 @@
+/* 视觉体系移植自 gopherforge (https://github.com/SuperiorChuo/gopherforge) MIT License,适配 OPIC 技术底座。
+   用户工作台专属:玻璃胶囊多页签栏 / Header 标题与「管理控制台」入口 / AI 工作区占位(.app-chat)。
+   外壳(.app-shell/.app-sider/.app-header/.app-content)复用 admin-layout.css 同一套类名;
+   所有选择器统一加 [data-glass] 前缀(作用域挂在 App 根节点)。 */
+
+/* ===== Header 标题与「管理控制台」入口 ===== */
+[data-glass] .app-header-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: rgba(226, 232, 240, 0.92);
+  white-space: nowrap;
+}
+
+[data-glass][data-theme='light'] .app-header-title {
+  color: #0f172a;
+}
+
+[data-glass] .app-header-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+[data-glass] .app-header-link:hover {
+  background: rgba(99, 102, 241, 0.22);
+  color: #c7d2fe;
+  border-color: rgba(129, 140, 248, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+[data-glass][data-theme='light'] .app-header-link {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.24);
+  color: #2563eb;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+[data-glass][data-theme='light'] .app-header-link:hover {
+  background: rgba(37, 99, 235, 0.14);
+  color: #1d4ed8;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 4px 12px rgba(37, 99, 235, 0.18);
+}
+
+/* Header 上激活态 trigger(AI 助理展开中) */
+[data-glass] .app-trigger.is-active {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+}
+
+[data-glass][data-theme='light'] .app-trigger.is-active {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+}
+
+/* ===== 多页签栏:玻璃胶囊 ===== */
+[data-glass] .user-tabs {
+  position: sticky;
+  top: 60px;
+  z-index: 8;
+  flex: none;
+  margin: 12px 20px 0;
+  padding: 5px 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(14, 16, 30, 0.55);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+[data-glass][data-theme='light'] .user-tabs {
+  border-color: rgba(15, 23, 42, 0.07);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    0 8px 22px rgba(37, 99, 235, 0.07);
+}
+
+[data-glass] .user-tabs .ant-tabs-nav {
+  margin: 0;
+}
+
+[data-glass] .user-tabs .ant-tabs-nav::before {
+  border-bottom: none;
+}
+
+/* 页签胶囊:默认透明玻璃,hover 微亮 */
+[data-glass] .user-tabs .ant-tabs-tab {
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  border-radius: 999px !important;
+  padding: 3px 6px 3px 14px !important;
+  margin-inline-end: 6px !important;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-glass] .user-tabs .ant-tabs-tab:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-glass] .user-tabs .ant-tabs-tab .ant-tabs-tab-btn {
+  color: rgba(203, 213, 225, 0.82);
+  font-size: 13px;
+}
+
+[data-glass] .user-tabs .ant-tabs-tab .ant-tabs-tab-btn:hover {
+  color: #e2e8f0;
+}
+
+/* 当前页:渐变底 + 辉光 */
+[data-glass] .user-tabs .ant-tabs-tab-active {
+  background: linear-gradient(100deg, rgba(99, 102, 241, 0.92), rgba(124, 58, 237, 0.85)) !important;
+  background-size: 220% 100% !important;
+  animation: og-liquid-btn-flow 8s linear infinite;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+[data-glass] .user-tabs .ant-tabs-tab-active .ant-tabs-tab-btn,
+[data-glass] .user-tabs .ant-tabs-tab-active .ant-tabs-tab-btn:hover {
+  color: #fff !important;
+}
+
+/* 关闭钮:小圆钮 */
+[data-glass] .user-tabs .ant-tabs-tab-remove {
+  margin-left: 4px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: rgba(203, 213, 225, 0.6);
+  transition: background 0.15s, color 0.15s;
+}
+
+[data-glass] .user-tabs .ant-tabs-tab-remove:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+[data-glass] .user-tabs .ant-tabs-tab-active .ant-tabs-tab-remove {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+[data-glass] .user-tabs .ant-tabs-tab-active .ant-tabs-tab-remove:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+/* 亮色主题页签 */
+[data-glass][data-theme='light'] .user-tabs .ant-tabs-tab:hover {
+  background: rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-glass][data-theme='light'] .user-tabs .ant-tabs-tab .ant-tabs-tab-btn {
+  color: #475569;
+}
+
+[data-glass][data-theme='light'] .user-tabs .ant-tabs-tab .ant-tabs-tab-btn:hover {
+  color: #0f172a;
+}
+
+[data-glass][data-theme='light'] .user-tabs .ant-tabs-tab-active {
+  background: linear-gradient(100deg, #2563eb 0%, #0ea5e9 45%, #2563eb 90%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 4px 14px rgba(37, 99, 235, 0.32);
+}
+
+[data-glass][data-theme='light'] .user-tabs .ant-tabs-tab-remove {
+  color: rgba(71, 85, 105, 0.6);
+}
+
+[data-glass][data-theme='light'] .user-tabs .ant-tabs-tab-remove:hover {
+  background: rgba(15, 23, 42, 0.1);
+  color: #0f172a;
+}
+
+[data-glass][data-theme='light'] .user-tabs .ant-tabs-tab-active .ant-tabs-tab-remove {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== 工作台内容区 ===== */
+[data-glass] .app-shell-user .app-content.user-content {
+  margin: 14px 20px 28px;
+}
+
+/* 列表页工具条内嵌筛选表单时的对齐修正 */
+[data-glass] .table-toolbar-extra .ant-form-item {
+  margin-bottom: 0;
+  margin-inline-end: 8px;
+}
+
+/* ===== AI 工作区占位(.app-chat) ===== */
+[data-glass] .app-chat {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex: 0 0 300px;
+  width: 300px;
+  height: 100vh;
+  padding: 16px 16px 16px 0;
+  overflow: hidden;
+  z-index: 6;
+  transition: flex-basis var(--dur-mid) var(--ease-out), width var(--dur-mid) var(--ease-out),
+    padding var(--dur-mid) var(--ease-out);
+}
+
+/* 折叠:宽度归零,内容区(Sider 右侧主区)经 flex 自动加宽 */
+[data-glass] .app-chat-collapsed {
+  flex-basis: 0;
+  width: 0;
+  padding-left: 0;
+}
+
+[data-glass] .app-chat-inner {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  height: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(18, 20, 34, 0.55);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  position: relative;
+}
+
+[data-glass][data-theme='light'] .app-chat-inner {
+  border-color: rgba(15, 23, 42, 0.07);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    0 12px 30px rgba(37, 99, 235, 0.09);
+}
+
+/* 面板顶部弧面高光 */
+[data-glass] .app-chat-inner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.35), transparent);
+  z-index: 1;
+}
+
+[data-glass][data-theme='light'] .app-chat-inner::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+}
+
+[data-glass] .app-chat-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+[data-glass][data-theme='light'] .app-chat-header {
+  border-bottom-color: rgba(15, 23, 42, 0.06);
+}
+
+/* 渐变图标徽章(与控制台 .app-logo-mark 同语言) */
+[data-glass] .app-chat-badge {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.35),
+    0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+[data-glass][data-theme='light'] .app-chat-badge {
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.45),
+    0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+[data-glass] .app-chat-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.92);
+  white-space: nowrap;
+}
+
+[data-glass][data-theme='light'] .app-chat-title {
+  color: #0f172a;
+}
+
+[data-glass] .app-chat-chip {
+  flex: none;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 18px;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.28);
+}
+
+[data-glass][data-theme='light'] .app-chat-chip {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
+[data-glass] .app-chat-close {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}
+
+/* 正文占位 */
+[data-glass] .app-chat-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+}
+
+[data-glass] .app-chat-empty {
+  text-align: center;
+  max-width: 220px;
+}
+
+[data-glass] .app-chat-empty-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 28px rgba(99, 102, 241, 0.18);
+}
+
+[data-glass][data-theme='light'] .app-chat-empty-icon {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.07);
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.85),
+    0 0 24px rgba(37, 99, 235, 0.12);
+}
+
+[data-glass] .app-chat-empty-title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.88);
+}
+
+[data-glass][data-theme='light'] .app-chat-empty-title {
+  color: rgba(15, 23, 42, 0.88);
+}
+
+[data-glass] .app-chat-empty-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+/* 窄屏收纳 AI 工作区,保证主内容可用宽度 */
+@media (max-width: 960px) {
+  [data-glass] .app-chat {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-glass] .user-tabs .ant-tabs-tab-active {
+    animation: none;
+  }
+}

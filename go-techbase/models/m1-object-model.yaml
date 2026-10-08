@@ -1,0 +1,102 @@
+# M1 对象模型 - 客户示例域
+model_type: OBJECT
+version: "1.0"
+domain: "客户管理"
+
+aggregates:
+  - id: AGG-CUSTOMER-001
+    name: 客户
+    alias: Customer
+    aggregateType: AGGREGATE_ROOT
+    description: 客户申请登记对象（示例业务，用于验证技术底座）
+    lifecycle: [草稿, 待客户经理审批, 待部门总经理审批, 已通过, 已驳回]
+    tags: [示例域]
+    attributes:
+      - name: customerNo
+        label: 客户编号
+        type: String
+        required: true
+        unique: true
+      - name: customerName
+        label: 客户名称
+        type: String
+        required: true
+      - name: customerType
+        label: 客户类型
+        type: DictionaryRef
+        dictionaryRef:
+          dictionaryId: DICT-CUSTOMER-TYPE
+          typeCode: CUSTOMER_TYPE
+        required: true
+      - name: industry
+        label: 所属行业
+        type: String
+        required: false
+      - name: contactPerson
+        label: 联系人
+        type: String
+        required: false
+      - name: contactPhone
+        label: 联系电话
+        type: String
+        required: false
+      - name: customerLevel
+        label: 客户等级
+        type: DictionaryRef
+        dictionaryRef:
+          dictionaryId: DICT-CUSTOMER-LEVEL
+          typeCode: CUSTOMER_LEVEL
+        required: true
+      - name: address
+        label: 客户地址
+        type: String
+        required: false
+      - name: remark
+        label: 备注
+        type: String
+        required: false
+      - name: status
+        label: 审批状态
+        type: Enum
+        enumValues: [草稿, 待客户经理审批, 待部门总经理审批, 已通过, 已驳回]
+        required: true
+        defaultValue: 草稿
+
+data_dictionaries:
+  - id: DICT-CUSTOMER-TYPE
+    name: 客户类型字典
+    types:
+      - typeCode: CUSTOMER_TYPE
+        typeName: 客户类型
+        items:
+          - code: PERSONAL
+            label: 个人客户
+            enabled: true
+            sortOrder: 10
+          - code: ENTERPRISE
+            label: 企业客户
+            enabled: true
+            sortOrder: 20
+          - code: GOVERNMENT
+            label: 政府客户
+            enabled: true
+            sortOrder: 30
+
+  - id: DICT-CUSTOMER-LEVEL
+    name: 客户等级字典
+    types:
+      - typeCode: CUSTOMER_LEVEL
+        typeName: 客户等级
+        items:
+          - code: NORMAL
+            label: 普通客户
+            enabled: true
+            sortOrder: 10
+          - code: IMPORTANT
+            label: 重要客户
+            enabled: true
+            sortOrder: 20
+          - code: STRATEGIC
+            label: 战略客户
+            enabled: true
+            sortOrder: 30

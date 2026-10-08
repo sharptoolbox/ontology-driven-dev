@@ -1,0 +1,34 @@
+# M6 流程模型 - 客户示例域
+# 客户申请审批流：客户经理 -> 部门总经理（两个独立角色，严格串行）
+model_type: FLOW
+version: "1.0"
+domain: "客户管理"
+
+flows:
+  - id: FLOW-CUSTOMER-APPROVAL
+    name: 客户申请审批
+    flowType: APPROVAL
+    description: 客户申请由客户经理审批，通过后由部门总经理审批
+    businessObjectRefs:
+      - AGG-CUSTOMER-001
+    roleRefs:
+      - ROLE-CUSTOMER-MANAGER
+      - ROLE-DEPT-GM
+    trigger:
+      triggerType: BEHAVIOR
+      behaviorRef: Customer_Submit
+    startActivity: start
+    endActivities: [end_ok, end_reject]
+    nodeGraph:
+      nodes:
+        - { id: start, type: start, name: 开始 }
+        - { id: n1, type: approval_task, name: 客户经理审批, role_ref: CUSTOMER_MANAGER, outcomes: [APPROVE, REJECT] }
+        - { id: n2, type: approval_task, name: 部门总经理审批, role_ref: DEPT_GENERAL_MANAGER, outcomes: [APPROVE, REJECT] }
+        - { id: end_ok, type: end, name: 审批通过结束, result: APPROVED }
+        - { id: end_reject, type: end, name: 驳回结束, result: REJECTED }
+      edges:
+        - { source: start, target: n1 }
+        - { source: n1, target: n2, approval_outcome: APPROVE }
+        - { source: n1, target: end_reject, approval_outcome: REJECT }
+        - { source: n2, target: end_ok, approval_outcome: APPROVE }
+        - { source: n2, target: end_reject, approval_outcome: REJECT }
