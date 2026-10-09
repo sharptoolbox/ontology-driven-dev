@@ -1,0 +1,33 @@
+# M2 行为模型 - 客户示例域
+model_type: BEHAVIOR
+version: "1.0"
+domain: "客户管理"
+
+behaviors:
+  - id: Customer_SaveAsDraft
+    name: 客户申请暂存
+    behaviorType: COMMAND
+    targetAggregate: AGG-CUSTOMER-001
+    description: 保存客户申请为草稿
+  - id: Customer_Submit
+    name: 客户申请提交
+    behaviorType: COMMAND
+    targetAggregate: AGG-CUSTOMER-001
+    description: 提交客户申请并启动客户审批流
+    syncTriggers:
+      - flowRef: FLOW-CUSTOMER-APPROVAL
+  - id: Customer_QueryList
+    name: 客户查询
+    behaviorType: QUERY
+    targetAggregate: AGG-CUSTOMER-001
+    description: 按条件查询客户列表
+  - id: Customer_ApproveManager
+    name: 客户经理审批
+    behaviorType: COMMAND
+    targetAggregate: AGG-CUSTOMER-001
+    description: 客户经理审批节点
+  - id: Customer_ApproveGM
+    name: 部门总经理审批
+    behaviorType: COMMAND
+    targetAggregate: AGG-CUSTOMER-001
+    description: 部门总经理审批节点

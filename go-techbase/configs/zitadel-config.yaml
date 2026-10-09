@@ -1,0 +1,41 @@
+# ZITADEL 演示环境配置(挂载进容器;数据库口令经 ZITADEL_DATABASE_* 环境变量注入)
+Log:
+  Level: info
+
+Database:
+  postgres:
+    Host: postgres
+    Port: 5432
+    Database: zitadel
+    MaxOpenConns: 10
+    MaxIdleConns: 5
+    User:
+      Username: zitadel
+      SSL:
+        Mode: disable
+    Admin:
+      Username: postgres
+      SSL:
+        Mode: disable
+
+# 对外访问地址(演示:经宿主 8081 → 容器 8080,HTTP 明文)
+ExternalDomain: 55.32.170.170
+ExternalPort: 8081
+ExternalSecure: false
+
+DefaultInstance:
+  InstanceName: OPIC
+  DefaultLanguage: zh
+  Org:
+    Name: OPIC
+
+# start-from-init 步骤配置(创建首个实例与管理员;须用 FirstInstance 命名空间)
+FirstInstance:
+  Org:
+    Name: OPIC
+    Human:
+      UserName: zitadel-admin
+      FirstName: ZITADEL
+      LastName: Admin
+      Password: Password1!
+      PreferredLanguage: zh

@@ -1,0 +1,83 @@
+# MU UI 模型 - 客户示例域
+model_type: UI
+version: "1.0"
+domain: "客户管理"
+
+application:
+  name: 客户管理技术底座
+  menus:
+    - menuId: menu-customer
+      name: 客户管理
+      children:
+        - menuId: menu-customer-apply
+          name: 客户申请
+          screenRef: frmCustomerApply
+        - menuId: menu-customer-query
+          name: 客户查询
+          screenRef: frmCustomerQuery
+    - menuId: menu-workbench
+      name: 审批中心
+      children:
+        - menuId: menu-workbench-todo
+          name: 我的待办
+          screenRef: frmTodo
+        - menuId: menu-workbench-done
+          name: 我的已办
+          screenRef: frmDone
+        - menuId: menu-workbench-requested
+          name: 我的申请
+          screenRef: frmRequested
+    - menuId: menu-flow
+      name: 流程管理
+      children:
+        - menuId: menu-flow-definition
+          name: 流程定义
+          screenRef: frmFlowDefinition
+        - menuId: menu-flow-instance
+          name: 流程实例
+          screenRef: frmFlowInstance
+        - menuId: menu-flow-task
+          name: 任务管理
+          screenRef: frmFlowTask
+    - menuId: menu-system
+      name: 系统管理
+      children:
+        - menuId: menu-system-user
+          name: 用户管理
+          screenRef: frmUserManage
+        - menuId: menu-system-role
+          name: 角色管理
+          screenRef: frmRoleManage
+        - menuId: menu-system-permission
+          name: 权限管理
+          screenRef: frmPermissionManage
+        - menuId: menu-system-resource
+          name: 资源管理
+          screenRef: frmResourceManage
+
+screens:
+  - screenId: frmCustomerApply
+    name: 客户申请
+    screenType: SINGLE_FORM
+    elements:
+      - { id: txtCustomerName, type: TEXTBOX, label: 客户名称, required: true, dataBinding: Customer.customerName }
+      - { id: cboCustomerType, type: COMBO, label: 客户类型, required: true, dataBinding: Customer.customerType }
+      - { id: txtIndustry, type: TEXTBOX, label: 所属行业, dataBinding: Customer.industry }
+      - { id: txtContactPerson, type: TEXTBOX, label: 联系人, dataBinding: Customer.contactPerson }
+      - { id: txtContactPhone, type: TEXTBOX, label: 联系电话, dataBinding: Customer.contactPhone }
+      - { id: cboCustomerLevel, type: COMBO, label: 客户等级, required: true, dataBinding: Customer.customerLevel }
+      - { id: txtAddress, type: TEXTBOX, label: 客户地址, dataBinding: Customer.address }
+      - { id: txtaRemark, type: TEXTAREA, label: 备注, dataBinding: Customer.remark }
+    actions:
+      - { actionId: actSaveDraft, name: 暂存, actionType: DRAFT, behaviorRef: Customer_SaveAsDraft }
+      - { actionId: actSubmit, name: 提交, actionType: SUBMIT, behaviorRef: Customer_Submit }
+
+  - screenId: frmCustomerQuery
+    name: 客户查询
+    screenType: QUERY_LIST
+    elements:
+      - { id: txtCustomerNo, type: TEXTBOX, label: 客户编号, dataBinding: Customer.customerNo }
+      - { id: txtCustomerName, type: TEXTBOX, label: 客户名称, dataBinding: Customer.customerName }
+      - { id: cboStatus, type: COMBO, label: 审批状态, dataBinding: Customer.status }
+    actions:
+      - { actionId: actQuery, name: 查询, actionType: BUTTON, behaviorRef: Customer_QueryList }

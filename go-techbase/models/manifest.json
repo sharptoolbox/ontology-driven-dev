@@ -1,0 +1,15 @@
+{
+  "model_type": "MANIFEST",
+  "version": "1.0",
+  "domain": "客户管理",
+  "project": "code-paas",
+  "source_requirements": "系统管理+流程引擎需求规格说明书.md",
+  "framework": "ontology_modeling_framework_v9.md",
+  "model_files": [
+    "m1-object-model.yaml",
+    "m2-behavior-model.yaml",
+    "m5-actor-model.yaml",
+    "m6-flow-model.yaml",
+    "mu-ui-model.yaml"
+  ]
+}

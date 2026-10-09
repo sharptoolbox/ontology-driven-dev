@@ -1,0 +1,19 @@
+# go-techbase 构建产物与运行时
+techbase
+go-techbase
+*.log
+log/
+data/
+bin/
+node_modules/
+dist/
+.DS_Store
+__pycache__/
+
+# 本地环境
+.env
+
+# IDE
+.idea/
+.vscode/
+smoke

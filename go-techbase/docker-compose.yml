@@ -1,0 +1,117 @@
+# 应用栈：techbase 后端 + 前端（nginx）—— 接入 step1 生产基础设施
+#
+# 重构口径（2026-10-02）：不再自起 gateway/postgres/redis，全部接入 opic-ai 生产环境
+# （192.168.3.200，*.opic-ai.ccoe.tech，见 opic-deploy 仓与 118 号生产部署方案）：
+#   - Traefik    统一入口（opic-net 外部网络，本栈只声明 labels，子域 techbase.opic-ai.ccoe.tech）
+#   - PostgreSQL Pigsty 集群 haproxy :5433（库 opicdb，schema otechbase —— OPIC-DB-SCHEMA-01）
+#   - Redis      opic-redis（opic-net 内 :6379）
+#   - NATS       opic-nats（opic-net 内 :4222，EVENTBUS_DRIVER=nats 时）
+#   - Temporal   opic-temporal（opic-net 内 :7233，WORKFLOW_DRIVER=temporal 时）
+#   - Harbor     镜像来源（make harbor-push 推送 192.168.3.200:18700）
+#
+# 本地开发：configs/config.yml 默认即指生产；纯离线自足栈见 docker-compose.infra.yml（dev only）。
+name: go-techbase
+
+networks:
+  opic-net:
+    external: true
+    name: ${DOCKER_NETWORK:-opic-net}
+
+services:
+  techbase:
+    image: ${IMAGE_PREFIX:-192.168.3.200:18700/opic/techbase}:${IMAGE_TAG:-latest}
+    container_name: go-techbase-app
+    restart: always
+    depends_on: []   # 数据面(opic-pg/redis/nats/temporal)由 step1 部署工程先行拉起
+    environment:
+      TZ: Asia/Shanghai
+      APP_PORT: "9680"
+      # ── 数据面（Pigsty：宿主网关 + haproxy 5433 rw；schema 按中心域码）──
+      DB_HOST: ${PG_HOST:-host.docker.internal}
+      DB_PORT: ${PG_PORT:-5433}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-${PG_ADMIN_PASSWORD:?PG_ADMIN_PASSWORD 未配置}}
+      DB_NAME: ${DB_NAME:-opicdb}
+      DB_SCHEMA: ${DB_SCHEMA:-otechbase}
+      DB_SSLMODE: disable
+      # ── Redis / 事件总线 / 工作流（容器网直连）──
+      REDIS_ENABLED: ${REDIS_ENABLED:-true}
+      REDIS_HOST: ${REDIS_HOST:-opic-redis}
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD 未配置}
+      EVENTBUS_DRIVER: ${EVENTBUS_DRIVER:-nats}
+      EVENTBUS_URL: ${EVENTBUS_URL:-nats://opic-nats:4222}
+      EVENTBUS_USERNAME: ${EVENTBUS_USERNAME:-opic}
+      EVENTBUS_PASSWORD: ${EVENTBUS_PASSWORD:-${NATS_PASSWORD:?NATS_PASSWORD 未配置}}
+      CENTER_CODE: ${CENTER_CODE:-techbase}
+      NATS_STREAM: ${NATS_STREAM:-}
+      NATS_SUBJECT_PREFIX: ${NATS_SUBJECT_PREFIX:-}
+      WORKFLOW_DRIVER: ${WORKFLOW_DRIVER:-temporal}
+      WORKFLOW_ADDRESS: ${WORKFLOW_ADDRESS:-temporal:7233}
+      WORKFLOW_NAMESPACE: ${WORKFLOW_NAMESPACE:-opic}
+      WORKFLOW_TASK_QUEUE: ${WORKFLOW_TASK_QUEUE:-}
+      # ── 用户工作台 SSO（OPIC-SSO-01：Casdoor）──
+      USER_AUTH_MODE: ${USER_AUTH_MODE:-local}
+      USER_AUTH_AUTO_PROVISION: ${USER_AUTH_AUTO_PROVISION:-false}
+      USER_AUTH_DEFAULT_ROLE_CODES: ${USER_AUTH_DEFAULT_ROLE_CODES:-}
+      CASDOOR_ISSUER: ${CASDOOR_ISSUER:-}
+      CASDOOR_CLIENT_ID: ${CASDOOR_CLIENT_ID:-}
+      CASDOOR_CLIENT_SECRET: ${CASDOOR_CLIENT_SECRET:-}
+      CASDOOR_REDIRECT_URL: ${CASDOOR_REDIRECT_URL:-}
+      # ── 认证（step1 ZITADEL；生产 issuer=https://auth.opic-ai.ccoe.tech）──
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 未配置}
+      METRICS_ENABLED: ${METRICS_ENABLED:-true}
+      AUTH_MODE: ${AUTH_MODE:-local}
+      ZITADEL_ISSUER: ${ZITADEL_ISSUER:-}
+      ZITADEL_CLIENT_ID: ${ZITADEL_CLIENT_ID:-}
+      ZITADEL_CLIENT_SECRET: ${ZITADEL_CLIENT_SECRET:-}
+      ZITADEL_REDIRECT_URL: ${ZITADEL_REDIRECT_URL:-}
+      # IdP 域名经宿主网关 Traefik 回环(宿主 /etc/hosts 将 *.opic-ai.ccoe.tech 指向 127.0.0.1,
+      # 容器内直连会得到 127.0.0.1 → 必须显式 host-gateway);CA 信任见下方 SSL_CERT_FILE
+      SSL_CERT_FILE: /etc/ssl/certs/opic-ca.crt
+    extra_hosts:
+      - "host.docker.internal:${HOST_GW_IP:-host-gateway}"
+      # IdP/自站域名 → 宿主网关(容器侧 OIDC 发现/换码走 Traefik TLS)
+      - "auth.opic-ai.ccoe.tech:${AUTH_HOST_IP:-host-gateway}"
+      - "casdoor.opic-ai.ccoe.tech:${AUTH_HOST_IP:-host-gateway}"
+      - "techbase.opic-ai.ccoe.tech:${AUTH_HOST_IP:-host-gateway}"
+    volumes:
+      # 自建 CA 公钥(step1 gen-certs.sh 签发 *.opic-ai.ccoe.tech,公钥可入库);
+      # 容器内 OIDC 发现/换码经宿主网关 Traefik TLS 时须信任此 CA
+      - ./configs/ca.crt:/etc/ssl/certs/opic-ca.crt:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9680/health/live >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${DOCKER_NETWORK:-opic-net}
+      - opic.stack=techbase
+      # 子域路由（TLS 入口由 step1 Traefik 的 websecure 承载；/api|/health|/metrics → 后端）
+      - traefik.http.routers.techbase-api.rule=Host(`techbase.${BASE_DOMAIN:?BASE_DOMAIN 未配置}`) && (PathPrefix(`/api`) || PathPrefix(`/health`) || Path(`/metrics`))
+      - traefik.http.routers.techbase-api.entrypoints=${TRAEFIK_ENTRYPOINT:-web}
+      - traefik.http.routers.techbase-api.priority=100
+      - traefik.http.routers.techbase-api.service=techbase-api
+      - traefik.http.services.techbase-api.loadbalancer.server.port=9680
+    networks: [opic-net]
+
+  frontend:
+    image: ${IMAGE_PREFIX:-192.168.3.200:18700/opic/techbase-frontend}:${IMAGE_TAG:-latest}
+    container_name: go-techbase-frontend
+    restart: always
+    depends_on:
+      - techbase
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${DOCKER_NETWORK:-opic-net}
+      - opic.stack=techbase
+      # ⚠ Traefik 的 service 只指向 label 所在容器（step1 实测坑③）：
+      # web 路由必须挂 frontend 容器；/api|/health|/metrics 由 techbase 容器的 api 路由（priority 100）承接
+      - traefik.http.routers.techbase-web.rule=Host(`techbase.${BASE_DOMAIN}`)
+      - traefik.http.routers.techbase-web.entrypoints=${TRAEFIK_ENTRYPOINT:-web}
+      - traefik.http.routers.techbase-web.priority=1
+      - traefik.http.routers.techbase-web.service=techbase-web
+      - traefik.http.services.techbase-web.loadbalancer.server.port=80
+    networks: [opic-net]

@@ -34,7 +34,8 @@ ontology-driven-dev/
 │   ├── 合同管理需求规格说明书-V9.md
 │   ├── m1-object-model.yaml … m7-report-model.yaml + mu-ui-model.yaml
 │   └── manifest.json
-├── techbase/                     # code-paas 干净源码（复制到 code-app 后扩展）
+├── techbase/                     # code-paas 干净源码·Python 版（复制到 code-app 后扩展）
+├── go-techbase/                  # code-paas 干净源码·Go 版（Gin + PostgreSQL + goose + React 19，复制到 code-app 后扩展）
     ├── backend/                  # Flask + SQLite 后端（流程引擎 / 本体注册表 / 服务层）
     ├── frontend/                 # React + TypeScript 前端（Vite）
     ├── models/                   # 示例七模型 YAML（正式使用时替换为你的模型）
@@ -128,7 +129,7 @@ Codex 会把每阶段的人工确认映射为交互式提问/审批。注意：�
 - **一致性门禁**：可追溯性、M7↔M2 一对一、M6 引用无环等强制核对。
 
 ### 阶段三：应用构建 → 可运行 BS 系统
-- **技术底座**：将 `techbase/` 整体复制到当前项目的 `code-app/`：
+- **技术底座**：按项目技术选型，将 `techbase/`（Python 版）或 `go-techbase/`（Go 版）整体复制到当前项目的 `code-app/`：
   ```bash
   cp -r <技能根目录>/techbase/. <当前项目>/code-app/
   cd <当前项目>/code-app/frontend && npm install

@@ -1,0 +1,411 @@
+/* 视觉体系移植自 gopherforge (https://github.com/SuperiorChuo/gopherforge) MIT License,适配 OPIC 技术底座。
+   管理控制台外壳布局(渐变玻璃 Sider 224px + 60px 玻璃 Header + 环境光内容区)。
+   所有选择器统一加 [data-glass] 前缀。 */
+
+/* ===== 外壳:侧栏固定视口高度,主区独立滚动 ===== */
+[data-glass] .app-shell.ant-layout {
+  min-height: 100vh;
+  background: var(--app-bg, #0a0b14);
+}
+
+[data-glass] .app-sider.ant-layout-sider {
+  background: var(--sider-gradient) !important;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.45);
+  border-right: 1px solid rgba(148, 163, 184, 0.08);
+  position: sticky !important;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  height: 100vh !important;
+  max-height: 100vh;
+  overflow: hidden !important;
+  align-self: flex-start;
+  inset-inline-start: auto !important;
+}
+
+[data-glass] .app-sider .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Sider:顶部弧面高光 + 玻璃透镜 */
+[data-glass] .app-sider {
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+}
+
+[data-glass] .app-sider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.35), transparent);
+  z-index: 2;
+}
+
+[data-glass][data-theme='light'] .app-sider {
+  box-shadow: 2px 0 16px rgba(15, 23, 42, 0.06);
+  border-right: 1px solid rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+}
+
+[data-glass][data-theme='light'] .app-sider::before {
+  background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.5), transparent);
+}
+
+[data-glass] .app-main.ant-layout {
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+}
+
+[data-glass] .app-logo {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  flex-shrink: 0;
+}
+
+[data-glass][data-theme='light'] .app-logo {
+  border-bottom-color: rgba(15, 23, 42, 0.06);
+}
+
+[data-glass] .app-logo-mark {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+[data-glass][data-theme='light'] .app-logo-mark {
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+[data-glass] .app-logo-text {
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+[data-glass][data-theme='light'] .app-logo-text {
+  color: #0f172a;
+}
+
+/* 菜单选中项:渐变底 + 辉光 + 流动 */
+[data-glass] .app-sider .ant-menu {
+  background: transparent;
+}
+
+[data-glass] .app-sider .ant-menu-dark .ant-menu-item-selected {
+  background: linear-gradient(100deg, rgba(99, 102, 241, 0.9), rgba(124, 58, 237, 0.85)) !important;
+  background-size: 220% 100% !important;
+  animation: og-liquid-btn-flow 8s linear infinite;
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+}
+
+[data-glass] .app-sider .ant-menu-light .ant-menu-item-selected {
+  background: linear-gradient(100deg, #3b82f6 0%, #2563eb 45%, #3b82f6 90%) !important;
+  background-size: 220% 100% !important;
+  animation: og-liquid-btn-flow 8s linear infinite;
+  color: #fff !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+[data-glass] .app-sider .ant-menu-item,
+[data-glass] .app-sider .ant-menu-submenu-title {
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+[data-glass] .app-menu-scroll {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-glass] .app-menu-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+[data-glass] .app-menu-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-glass][data-theme='light'] .app-menu-scroll::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.15);
+}
+
+/* ===== Header:60px 玻璃条 ===== */
+[data-glass] .app-header {
+  height: 60px;
+  flex: none;
+  padding: 0 24px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(12, 14, 26, 0.72) !important;
+  backdrop-filter: blur(22px) saturate(1.5) brightness(1.03) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.5) brightness(1.03) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  overflow: hidden;
+}
+
+[data-glass] .app-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 120% 80% at 50% -30%, rgba(255, 255, 255, 0.06), transparent 60%);
+}
+
+[data-glass] .app-header::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.35), transparent);
+}
+
+[data-glass][data-theme='light'] .app-header {
+  background: rgba(255, 255, 255, 0.65) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(24px) saturate(1.8) brightness(1.02) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.8) brightness(1.02) !important;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.05);
+}
+
+[data-glass][data-theme='light'] .app-header::before {
+  background: radial-gradient(ellipse 120% 80% at 50% -30%, rgba(255, 255, 255, 0.45), transparent 60%);
+}
+
+[data-glass][data-theme='light'] .app-header::after {
+  background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.55), transparent);
+}
+
+[data-glass] .app-header-leading {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ===== Header 上的胶囊:trigger / user ===== */
+[data-glass] .app-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 17px;
+  color: rgba(203, 213, 225, 0.75);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-glass] .app-trigger:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+[data-glass][data-theme='light'] .app-trigger {
+  color: #475569;
+}
+
+[data-glass][data-theme='light'] .app-trigger:hover {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+[data-glass] .app-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-glass] .app-user:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-glass][data-theme='light'] .app-user:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+[data-glass] .app-user-name {
+  font-weight: 500;
+  color: rgba(226, 232, 240, 0.88);
+  font-size: 14px;
+}
+
+[data-glass][data-theme='light'] .app-user-name {
+  color: #334155;
+}
+
+[data-glass] .app-user .ant-avatar {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 2px 8px rgba(99, 102, 241, 0.25);
+}
+
+/* ===== 面包屑 ===== */
+[data-glass] .app-breadcrumb {
+  font-size: 13px;
+}
+
+[data-glass] .app-bc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 4px;
+  border: none;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+[data-glass] .app-bc-link:hover {
+  color: #a5b4fc;
+}
+
+[data-glass][data-theme='light'] .app-bc-link {
+  color: #64748b;
+}
+
+[data-glass][data-theme='light'] .app-bc-link:hover {
+  color: #2563eb;
+}
+
+[data-glass] .app-bc-mid {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+[data-glass][data-theme='light'] .app-bc-mid {
+  color: #475569;
+}
+
+[data-glass] .app-bc-current {
+  color: rgba(226, 232, 240, 0.92);
+}
+
+[data-glass][data-theme='light'] .app-bc-current {
+  color: #0f172a;
+}
+
+/* ===== 内容区 ===== */
+[data-glass] .app-content {
+  margin: 24px;
+  min-height: 280px;
+  max-width: 1600px;
+}
+
+@media (min-width: 1700px) {
+  [data-glass] .app-content {
+    margin-inline: auto;
+    width: calc(100% - 48px);
+  }
+}
+
+[data-glass][data-theme='light'] .app-content {
+  color: rgba(15, 23, 42, 0.88);
+}
+
+[data-glass][data-theme='light'] .app-main.ant-layout {
+  background:
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(219, 234, 254, 0.45), transparent 50%),
+    transparent;
+}
+
+/* ===== 移动端侧栏遮罩 + 抽屉式展开 ===== */
+[data-glass] .app-sider-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(7, 8, 16, 0.52);
+  backdrop-filter: blur(6px) saturate(1.1);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  animation: og-mask-in 0.22s ease both;
+}
+
+[data-glass][data-theme='light'] .app-sider-mask {
+  background: rgba(15, 23, 42, 0.28);
+}
+
+@keyframes og-mask-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+[data-glass] .app-shell.is-mobile .app-sider.ant-layout-sider.ant-layout-sider-collapsed {
+  min-width: 0 !important;
+  max-width: 0 !important;
+  width: 0 !important;
+  flex: 0 0 0 !important;
+  border-right: none;
+  box-shadow: none;
+  overflow: hidden !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-glass] .app-sider-mask {
+    animation: none;
+  }
+}
