@@ -1,0 +1,18 @@
+# 应用配置（所有可变项配置化，禁止硬编码）
+app:
+  name: 企业应用技术底座
+  host: 127.0.0.1
+  port: 5000
+  secret_key: change-me-in-production
+  database: data/app.db
+
+auth:
+  jwt_secret: please-change-this-jwt-secret
+  jwt_expires_hours: 2
+  default_admin: admin
+  default_admin_password: admin123
+
+# 只读动态 SQL 边界
+sql_readonly:
+  max_rows: 200
+  timeout_seconds: 5

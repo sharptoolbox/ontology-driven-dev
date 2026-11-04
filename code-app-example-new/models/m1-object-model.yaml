@@ -1,0 +1,722 @@
+model_type: OBJECT
+version: "2.1"
+domain: 通用业务
+aggregates:
+  - id: OBJ-001
+    name: 合同
+    alias: Contract
+    aggregateType: AGGREGATE_ROOT
+    attributes:
+      - name: contract_no
+        label: 合同编号
+        type: String
+        required: true
+        unique: true
+        length: 20
+        refRules:
+          - 格式为HT+YYYYMM+4位流水，生成后不可修改，全系统唯一
+      - name: contract_name
+        label: 合同名称
+        type: String
+        required: true
+        unique: false
+        length: 100
+        minLength: 1
+        maxLength: 100
+        refRules:
+          - 不可全空格
+      - name: product_no
+        label: 所属产品编号
+        type: AggregateRootRef
+        required: true
+        unique: false
+        targetAggregate: MDM-001
+        refRules:
+          - 只能选择已存在的产品，保存时校验产品存在
+      - name: customer_no
+        label: 所属客户编号
+        type: AggregateRootRef
+        required: true
+        unique: false
+        targetAggregate: MDM-002
+        refRules:
+          - 只能选择已存在的客户
+      - name: dept_no
+        label: 所属部门编号
+        type: AggregateRootRef
+        required: true
+        unique: false
+        targetAggregate: MDM-003
+        defaultValue: 责任人所属部门
+        refRules:
+          - 选择责任人后自动带出其所属部门，允许手工改为其他部门；只能选已存在部门
+      - name: contract_type
+        label: 合同类型
+        type: String
+        required: true
+        unique: false
+        length: 20
+        defaultValue: 产品合同
+        dictionaryRef: DIC-001
+        refRules:
+          - 只能选择合同类型字典中已启用的字典项
+      - name: sign_date
+        label: 合同签订时间
+        type: Date
+        required: true
+        unique: false
+        refRules:
+          - 不晚于当前日期
+      - name: owner_no
+        label: 责任人编号
+        type: AggregateRootRef
+        required: true
+        unique: false
+        targetAggregate: MDM-004
+        refRules:
+          - 只能选择已存在人员
+      - name: total_amount
+        label: 合同总金额
+        type: Money
+        required: true
+        unique: false
+        refRules:
+          - 大于0，保留2位小数，为含税金额
+      - name: purchase_amount
+        label: 合同对外采购金额
+        type: Money
+        required: false
+        unique: false
+        defaultValue: "0.00"
+        refRules:
+          - 不小于0且不大于合同总金额，仅作登记，不参与任何计算
+      - name: tax_rate
+        label: 合同税率
+        type: Decimal
+        required: true
+        unique: false
+        defaultValue: "13.00"
+        refRules:
+          - 取值0~100，保留2位小数，单位%
+      - name: status
+        label: 合同状态
+        type: String
+        required: true
+        unique: false
+        defaultValue: 草稿
+        dictionaryRef: DIC-002
+        refRules:
+          - 仅能由系统按规则流转：草稿到审批中到已生效到已关闭，驳回或撤回时审批中退回草稿
+      - name: effective_time
+        label: 合同生效时间
+        type: DateTime
+        required: false
+        unique: false
+        refRules:
+          - 审批最终通过时自动写入，之后不可修改
+      - name: close_time
+        label: 合同关闭时间
+        type: DateTime
+        required: false
+        unique: false
+        refRules:
+          - 合同自动关闭时写入
+      - name: invoiced_amount
+        label: 累计开票金额
+        type: Money
+        required: false
+        unique: false
+        defaultValue: "0.00"
+        refRules:
+          - 系统维护，只读，等于该合同全部开票金额之和
+      - name: received_amount
+        label: 累计收款金额
+        type: Money
+        required: false
+        unique: false
+        defaultValue: "0.00"
+        refRules:
+          - 系统维护，只读，等于该合同全部收款金额之和
+      - name: created_by
+        label: 创建人
+        type: String
+        required: true
+        unique: false
+        defaultValue: 当前登录人
+        refRules:
+          - 记录创建人姓名和编号，创建后不可修改
+      - name: created_at
+        label: 创建时间
+        type: DateTime
+        required: true
+        unique: false
+        defaultValue: 当前时间
+        refRules:
+          - 创建后不可修改
+      - name: remark
+        label: 备注
+        type: String
+        required: false
+        unique: false
+        length: 200
+        maxLength: 200
+    entities:
+      - name: 合同付款条款
+        alias: ContractPaymentTerm
+        localId: stage_no
+        cardinality: ONE_TO_MANY
+        cascadeDelete: true
+        description: 原需求对象 OBJ-002 合同付款条款，随合同一起保存、修改、删除，不可单独维护、单独查询。
+        attributes:
+          - name: stage_no
+            label: 付款阶段编号
+            type: String
+            required: true
+            unique: false
+            length: 10
+            refRules:
+              - 在所属合同内从1开始连续编号，由系统按行顺序生成，同一合同内唯一，不允许手工修改
+          - name: stage_name
+            label: 付款阶段名称
+            type: String
+            required: true
+            unique: false
+            length: 50
+            refRules:
+              - 同一合同内阶段名称不可重复
+          - name: ratio
+            label: 付款比例（%）
+            type: Decimal
+            required: true
+            unique: false
+            refRules:
+              - 大于0且不大于100，保留2位小数；同一合同全部条款合计必须等于100
+          - name: stage_amount
+            label: 该比例金额
+            type: Money
+            required: true
+            unique: false
+            refRules:
+              - 等于合同总金额乘以付款比例除以100，四舍五入保留2位小数；只读，随合同总金额或比例变化自动重算
+          - name: pay_condition
+            label: 阶段付款条件
+            type: String
+            required: true
+            unique: false
+            length: 200
+            minLength: 1
+            maxLength: 200
+            refRules:
+              - 用于说明客户付款触发条件
+          - name: invoice_status
+            label: 开票状态
+            type: String
+            required: true
+            unique: false
+            length: 10
+            defaultValue: 未开票
+            refRules:
+              - 取值仅未开票或已开票，开票成功后由系统置为已开票，不可人工修改
+          - name: invoice_no
+            label: 关联开票编号
+            type: String
+            required: false
+            unique: true
+            length: 20
+            refRules:
+              - 开票成功后回填该阶段对应的开票编号，只读；同一阶段仅一张开票
+          - name: remark
+            label: 条款备注
+            type: String
+            required: false
+            unique: false
+            length: 200
+            maxLength: 200
+    valueObjects: []
+    invariants:
+      - 付款条款至少1条，全部付款比例合计必须等于100.00。
+      - 阶段金额等于合同总金额乘以付款比例除以100并四舍五入保留2位；各阶段金额合计与合同总金额差异不得超过0.01元。
+      - 合同状态只能按草稿、审批中、已生效、已关闭顺序流转，审批驳回或撤回时由审批中退回草稿，状态由系统维护。
+      - 合同处于审批中时，合同基本信息与付款条款均不可修改、不可删除，不可开票。
+      - 合同存在开票或收款记录时禁止删除。
+      - 合同累计开票金额和累计收款金额由系统汇总维护，只读。
+      - 已开票的付款阶段不可修改或删除，且同一合同同一付款阶段只允许一张开票。
+      - 合同总金额必须大于0，对外采购金额不得大于合同总金额。
+  - id: OBJ-003
+    name: 合同开票
+    alias: ContractInvoice
+    aggregateType: AGGREGATE_ROOT
+    attributes:
+      - name: invoice_no
+        label: 开票编号
+        type: String
+        required: true
+        unique: true
+        length: 20
+        refRules:
+          - 格式为FP+YYYYMM+4位流水，生成后不可修改，全系统唯一
+      - name: contract_no
+        label: 对应合同编号
+        type: AggregateRootRef
+        required: true
+        unique: false
+        targetAggregate: OBJ-001
+        refRules:
+          - 只能选择状态为已生效或已关闭的合同；开票登记录入时仅可选中已生效合同
+      - name: stage_no
+        label: 对应付款阶段编号
+        type: String
+        required: true
+        unique: false
+        length: 10
+        refRules:
+          - 只能选择所选合同下开票状态为未开票的付款阶段；同一合同同一阶段全系统仅允许一张开票
+      - name: invoice_amount
+        label: 开票金额
+        type: Money
+        required: true
+        unique: false
+        defaultValue: 阶段金额
+        refRules:
+          - 等于对应付款阶段的该比例金额，带出后不可修改
+      - name: tax_rate
+        label: 开票税率
+        type: Decimal
+        required: true
+        unique: false
+        defaultValue: 合同税率
+        refRules:
+          - 默认取合同税率，允许修改；取值0~100，保留2位小数
+      - name: invoice_date
+        label: 开票时间
+        type: Date
+        required: true
+        unique: false
+        defaultValue: 当前日期
+        refRules:
+          - 不早于合同生效日期，不晚于当前日期
+      - name: receive_status
+        label: 收款状态
+        type: String
+        required: true
+        unique: false
+        length: 20
+        defaultValue: 未收款
+        dictionaryRef: DIC-003
+        refRules:
+          - 由收款金额累计自动更新：累计为0为未收款；大于0且小于开票金额为部分收款；等于开票金额为已收款
+      - name: received_amount
+        label: 累计已收款金额
+        type: Money
+        required: false
+        unique: false
+        defaultValue: "0.00"
+        refRules:
+          - 系统计算，只读，等于该开票下全部收款金额之和
+      - name: unreceived_amount
+        label: 未收款金额
+        type: Money
+        required: false
+        unique: false
+        defaultValue: 开票金额
+        refRules:
+          - 等于开票金额减去累计已收款金额，只读，不允许为负
+      - name: last_receive_date
+        label: 最后收款时间
+        type: Date
+        required: false
+        unique: false
+        refRules:
+          - 每次新增收款后更新为该开票下最晚的收款时间
+      - name: invoice_by
+        label: 开票人
+        type: String
+        required: true
+        unique: false
+        defaultValue: 当前登录人
+        refRules:
+          - 记录开票操作人，不可修改
+      - name: created_at
+        label: 登记时间
+        type: DateTime
+        required: true
+        unique: false
+        defaultValue: 当前时间
+        refRules:
+          - 开票登记时间，不可修改
+      - name: remark
+        label: 备注
+        type: String
+        required: false
+        unique: false
+        length: 200
+        maxLength: 200
+    entities: []
+    valueObjects: []
+    invariants:
+      - 开票金额必须等于对应付款阶段的该比例金额，带出后不可修改。
+      - 同一合同同一付款阶段仅允许一张开票记录，保存时校验该阶段未开票。
+      - 开票时间不得早于合同生效日期且不得晚于当前日期。
+      - 收款状态、累计已收款金额、未收款金额和最后收款时间由系统根据收款记录汇总更新。
+      - 未收款金额不得为负。
+  - id: OBJ-004
+    name: 合同收款
+    alias: ContractReceipt
+    aggregateType: AGGREGATE_ROOT
+    attributes:
+      - name: receive_no
+        label: 收款编号
+        type: String
+        required: true
+        unique: true
+        length: 20
+        refRules:
+          - 格式为SK+YYYYMM+4位流水，生成后不可修改，全系统唯一
+      - name: contract_no
+        label: 对应合同编号
+        type: AggregateRootRef
+        required: true
+        unique: false
+        targetAggregate: OBJ-001
+        refRules:
+          - 只能选择状态为已生效或已关闭的合同
+      - name: invoice_no
+        label: 对应开票编号
+        type: AggregateRootRef
+        required: true
+        unique: false
+        targetAggregate: OBJ-003
+        refRules:
+          - 只能选择所选合同下收款状态为未收款或部分收款的开票；不得选择已收款的开票
+      - name: receive_amount
+        label: 收款金额
+        type: Money
+        required: true
+        unique: false
+        refRules:
+          - 大于0且不大于所选开票的未收款金额，保留2位小数
+      - name: receive_date
+        label: 收款时间
+        type: Date
+        required: true
+        unique: false
+        defaultValue: 当前日期
+        refRules:
+          - 不早于所选开票的开票时间，不晚于当前日期
+      - name: receive_method
+        label: 收款方式
+        type: String
+        required: false
+        unique: false
+        length: 20
+        dictionaryRef: DIC-004
+        refRules:
+          - 只能选择收款方式字典中已启用的字典项
+      - name: receive_by
+        label: 收款登记人
+        type: String
+        required: true
+        unique: false
+        defaultValue: 当前登录人
+        refRules:
+          - 记录收款登记操作人，不可修改
+      - name: created_at
+        label: 登记时间
+        type: DateTime
+        required: true
+        unique: false
+        defaultValue: 当前时间
+        refRules:
+          - 收款登记时间，不可修改
+      - name: remark
+        label: 备注
+        type: String
+        required: false
+        unique: false
+        length: 200
+        maxLength: 200
+    entities: []
+    valueObjects: []
+    invariants:
+      - 收款金额必须大于0且不得超过所选开票的未收款金额。
+      - 收款时间不得早于开票时间且不得晚于当前日期。
+      - 收款保存成功后，系统更新对应开票的累计已收款金额、未收款金额、收款状态和最后收款时间。
+      - 当合同下全部开票的收款状态均为已收款时，系统自动将合同状态置为已关闭并写入关闭时间。
+  - id: MDM-001
+    name: 产品
+    alias: Product
+    aggregateType: AGGREGATE_ROOT
+    attributes:
+      - name: product_no
+        label: 产品编号
+        type: String
+        required: true
+        unique: true
+        length: 20
+        minLength: 1
+        maxLength: 20
+        refRules:
+          - 1~20位字母或数字，保存后不可修改
+      - name: product_type
+        label: 产品类型
+        type: String
+        required: true
+        unique: false
+        length: 20
+        dictionaryRef: DIC-005
+        refRules:
+          - 只能选择已启用的产品类型字典项
+      - name: product_name
+        label: 产品名称
+        type: String
+        required: true
+        unique: true
+        length: 100
+        minLength: 1
+        maxLength: 100
+        refRules:
+          - 不可重复
+    entities: []
+    valueObjects: []
+    invariants:
+      - 产品编号保存后不可修改。
+      - 产品名称不可重复。
+      - 产品被合同引用时不允许删除。
+  - id: MDM-002
+    name: 客户
+    alias: Customer
+    aggregateType: AGGREGATE_ROOT
+    attributes:
+      - name: customer_no
+        label: 客户编号
+        type: String
+        required: true
+        unique: true
+        length: 20
+        minLength: 1
+        maxLength: 20
+        refRules:
+          - 1~20位字母或数字，保存后不可修改
+      - name: customer_type
+        label: 客户类型
+        type: String
+        required: true
+        unique: false
+        length: 20
+        dictionaryRef: DIC-006
+        refRules:
+          - 只能选择已启用的客户类型字典项
+      - name: customer_name
+        label: 客户名称
+        type: String
+        required: true
+        unique: true
+        length: 100
+        minLength: 1
+        maxLength: 100
+        refRules:
+          - 不可重复
+    entities: []
+    valueObjects: []
+    invariants:
+      - 客户编号保存后不可修改。
+      - 客户名称不可重复。
+      - 客户被合同引用时不允许删除。
+  - id: MDM-003
+    name: 部门
+    alias: Department
+    aggregateType: AGGREGATE_ROOT
+    attributes:
+      - name: dept_no
+        label: 部门编号
+        type: String
+        required: true
+        unique: true
+        length: 20
+        minLength: 1
+        maxLength: 20
+        refRules:
+          - 1~20位字母或数字，保存后不可修改
+      - name: dept_name
+        label: 部门名称
+        type: String
+        required: true
+        unique: true
+        length: 50
+        minLength: 1
+        maxLength: 50
+        refRules:
+          - 不可重复
+    entities: []
+    valueObjects: []
+    invariants:
+      - 部门编号保存后不可修改。
+      - 部门名称不可重复。
+      - 部门被合同或人员引用时不允许删除。
+  - id: MDM-004
+    name: 人员
+    alias: Person
+    aggregateType: AGGREGATE_ROOT
+    attributes:
+      - name: person_no
+        label: 人员编号
+        type: String
+        required: true
+        unique: true
+        length: 20
+        minLength: 1
+        maxLength: 20
+        refRules:
+          - 1~20位字母或数字，保存后不可修改
+      - name: person_name
+        label: 人员名称
+        type: String
+        required: true
+        unique: false
+        length: 50
+        minLength: 1
+        maxLength: 50
+      - name: dept_no
+        label: 所属部门编号
+        type: AggregateRootRef
+        required: true
+        unique: false
+        targetAggregate: MDM-003
+        refRules:
+          - 只能选择已存在部门；该字段决定合同默认所属部门与数据权限范围
+    entities: []
+    valueObjects: []
+    invariants:
+      - 人员编号保存后不可修改。
+      - 所属部门必须存在。
+      - 人员被合同引用为责任人或创建人时不允许删除。
+aggregate_associations:
+  - id: ASSOC-001
+    sourceAggregate: OBJ-001
+    targetAggregate: MDM-001
+    associationType: REFERENCE
+    cardinality: MANY_TO_ONE
+    referenceField: Contract.product_no
+  - id: ASSOC-002
+    sourceAggregate: OBJ-001
+    targetAggregate: MDM-002
+    associationType: REFERENCE
+    cardinality: MANY_TO_ONE
+    referenceField: Contract.customer_no
+  - id: ASSOC-003
+    sourceAggregate: OBJ-001
+    targetAggregate: MDM-003
+    associationType: REFERENCE
+    cardinality: MANY_TO_ONE
+    referenceField: Contract.dept_no
+  - id: ASSOC-004
+    sourceAggregate: OBJ-001
+    targetAggregate: MDM-004
+    associationType: REFERENCE
+    cardinality: MANY_TO_ONE
+    referenceField: Contract.owner_no
+  - id: ASSOC-005
+    sourceAggregate: OBJ-003
+    targetAggregate: OBJ-001
+    associationType: REFERENCE
+    cardinality: MANY_TO_ONE
+    referenceField: ContractInvoice.contract_no
+  - id: ASSOC-006
+    sourceAggregate: OBJ-004
+    targetAggregate: OBJ-001
+    associationType: REFERENCE
+    cardinality: MANY_TO_ONE
+    referenceField: ContractReceipt.contract_no
+  - id: ASSOC-007
+    sourceAggregate: OBJ-004
+    targetAggregate: OBJ-003
+    associationType: REFERENCE
+    cardinality: MANY_TO_ONE
+    referenceField: ContractReceipt.invoice_no
+  - id: ASSOC-008
+    sourceAggregate: MDM-004
+    targetAggregate: MDM-003
+    associationType: REFERENCE
+    cardinality: MANY_TO_ONE
+    referenceField: Person.dept_no
+data_dictionaries:
+  - id: DIC-001
+    name: 合同类型
+    types:
+      - typeCode: CONTRACT_TYPE
+        typeName: 合同类型
+        items:
+          - code: PRODUCT_CONTRACT
+            label: 产品合同
+          - code: SERVICE_CONTRACT
+            label: 服务合同
+          - code: INTEGRATION_CONTRACT
+            label: 集成合同
+  - id: DIC-002
+    name: 合同状态
+    types:
+      - typeCode: CONTRACT_STATUS
+        typeName: 合同状态
+        items:
+          - code: DRAFT
+            label: 草稿
+          - code: APPROVING
+            label: 审批中
+          - code: EFFECTIVE
+            label: 已生效
+          - code: CLOSED
+            label: 已关闭
+  - id: DIC-003
+    name: 开票收款状态
+    types:
+      - typeCode: RECEIVE_STATUS
+        typeName: 开票收款状态
+        items:
+          - code: UNRECEIVED
+            label: 未收款
+          - code: PARTIAL
+            label: 部分收款
+          - code: RECEIVED
+            label: 已收款
+  - id: DIC-004
+    name: 收款方式
+    types:
+      - typeCode: RECEIVE_METHOD
+        typeName: 收款方式
+        items:
+          - code: BANK_TRANSFER
+            label: 银行转账
+          - code: BANK_ACCEPTANCE
+            label: 银行承兑
+          - code: CASH
+            label: 现金
+          - code: OTHER
+            label: 其他
+  - id: DIC-005
+    name: 产品类型
+    types:
+      - typeCode: PRODUCT_TYPE
+        typeName: 产品类型
+        items:
+          - code: HARDWARE
+            label: 硬件
+          - code: SOFTWARE
+            label: 软件
+          - code: SERVICE
+            label: 服务
+          - code: OTHER
+            label: 其他
+  - id: DIC-006
+    name: 客户类型
+    types:
+      - typeCode: CUSTOMER_TYPE
+        typeName: 客户类型
+        items:
+          - code: ENTERPRISE
+            label: 企业客户
+          - code: GOVERNMENT
+            label: 政府客户
+          - code: CHANNEL
+            label: 渠道客户
+          - code: OTHER
+            label: 其他

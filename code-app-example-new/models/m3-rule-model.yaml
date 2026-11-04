@@ -1,0 +1,198 @@
+model_type: RULE
+version: "2.0"
+domain: 通用业务
+rules:
+  - id: RULE-001
+    name: 付款条款比例合计与完整性规则
+    ruleType: CROSS_OBJECT_VALIDATION
+    description: 合同保存或提交审批时，校验合同付款条款至少一条且全部条款付款比例合计等于100.00%，以合同与付款条款两个对象为判断范围，供多个合同功能复用。
+    triggerCondition: 合同保存、合同修改保存或提交审批时。
+    expression: 付款条款条数大于等于1，且全部付款条款的付款比例合计等于100.00%。
+    result: 满足时允许保存或提交；不满足时阻止操作，并提示付款条款比例合计必须为100%及当前合计值。
+    relatedObjects:
+      - OBJ-001
+      - OBJ-002
+    relatedBehaviors:
+      - FUN-001
+      - FUN-002
+      - FUN-004
+    priority: 1
+    enabled: true
+    inputParams: []
+    outputParams: []
+  - id: RULE-002
+    name: 阶段金额自动计算与尾差规则
+    ruleType: CROSS_OBJECT_CALCULATION
+    description: 根据合同总金额与每条付款比例计算阶段金额，并检查阶段金额合计与合同总金额的尾差是否在0.01元以内；开票金额直接取阶段金额。
+    triggerCondition: 合同总金额或任一付款比例发生变化时，以及开票选择付款阶段时。
+    expression: 阶段金额等于合同总金额乘以付款比例除以100并四舍五入保留2位小数；各阶段金额合计与合同总金额的差额绝对值不超过0.01元。
+    result: 逐阶段回写阶段金额；差额超过0.01元时提示调整比例；开票金额直接取对应阶段金额，不重新计算。
+    relatedObjects:
+      - OBJ-001
+      - OBJ-002
+      - OBJ-003
+    relatedBehaviors:
+      - FUN-001
+      - FUN-002
+      - FUN-009
+    priority: 2
+    enabled: true
+    inputParams: []
+    outputParams: []
+  - id: RULE-003
+    name: 付款阶段开票唯一性规则
+    ruleType: CROSS_OBJECT_VALIDATION
+    description: 开票登记保存时校验所选付款阶段未被开票，保证一个付款阶段在全系统内最多对应一张开票。
+    triggerCondition: 合同开票登记保存时。
+    expression: 所选付款阶段的开票状态为未开票，且该付款阶段不存在已保存的开票记录。
+    result: 允许开票并保存；开票后将付款阶段置为已开票并回填关联开票编号；已开票则阻止保存并提示该付款阶段已开票。
+    relatedObjects:
+      - OBJ-002
+      - OBJ-003
+    relatedBehaviors:
+      - FUN-009
+    priority: 3
+    enabled: true
+    inputParams: []
+    outputParams: []
+  - id: RULE-004
+    name: 开票金额与税率取值规则
+    ruleType: CROSS_OBJECT_CALCULATION
+    description: 开票登记选择合同与付款阶段后，开票金额取付款阶段金额，开票税率默认取合同税率且允许修改，开票时间不得早于合同生效日期。
+    triggerCondition: 开票登记选择合同和付款阶段后，以及保存开票登记时。
+    expression: 开票金额等于所选付款阶段的该比例金额；开票税率默认等于合同税率；开票时间不早于对应合同的生效日期。
+    result: 开票金额只读并按阶段金额带出；税率可修改；日期不满足时阻止保存并提示。
+    relatedObjects:
+      - OBJ-001
+      - OBJ-002
+      - OBJ-003
+    relatedBehaviors:
+      - FUN-009
+    priority: 4
+    enabled: true
+    inputParams: []
+    outputParams: []
+  - id: RULE-005
+    name: 收款金额上限控制规则
+    ruleType: CROSS_OBJECT_VALIDATION
+    description: 收款登记保存时，本次收款金额不得超过所选开票的未收款金额，且收款时间不得早于所选开票的开票时间。
+    triggerCondition: 合同收款登记保存时。
+    expression: 本次收款金额不大于所选开票的未收款金额；收款时间不早于所选开票的开票时间。
+    result: 满足时保存收款；超出金额时阻止并提示未收款金额上限；日期不合规时阻止并提示。
+    relatedObjects:
+      - OBJ-003
+      - OBJ-004
+    relatedBehaviors:
+      - FUN-011
+    priority: 5
+    enabled: true
+    inputParams: []
+    outputParams: []
+  - id: RULE-006
+    name: 开票收款状态自动更新规则
+    ruleType: STATE_SYNC
+    description: 任一收款保存成功后，根据该开票累计已收款金额与开票金额比较，自动更新开票收款状态、未收款金额和最后收款时间。
+    triggerCondition: 合同收款保存成功后。
+    expression: 开票累计已收款等于0时为未收款；累计已收款大于0且小于开票金额时为部分收款；累计已收款等于开票金额时为已收款。
+    result: 同步更新开票收款状态、未收款金额和最后收款时间。
+    relatedObjects:
+      - OBJ-003
+      - OBJ-004
+    relatedBehaviors:
+      - FUN-011
+    priority: 6
+    enabled: true
+    inputParams: []
+    outputParams: []
+  - id: RULE-007
+    name: 合同自动关闭规则
+    ruleType: STATE_SYNC
+    description: 收款保存并更新开票状态后，检查合同下是否全部付款阶段已开票且全部开票均已收款，满足时系统自动关闭合同。
+    triggerCondition: 合同收款保存并更新开票收款状态后。
+    expression: 该合同下全部付款阶段均已开票，且该合同下全部开票的收款状态均为已收款。
+    result: 满足时合同状态由已生效自动变为已关闭并写入关闭时间；不满足时保持已生效；系统不提供人工关闭入口。
+    relatedObjects:
+      - OBJ-001
+      - OBJ-003
+      - OBJ-004
+    relatedBehaviors:
+      - FUN-011
+    priority: 7
+    enabled: true
+    inputParams: []
+    outputParams: []
+  - id: RULE-008
+    name: 合同状态与操作可用性控制规则
+    ruleType: CROSS_FUNCTION_CONTROL
+    description: 根据合同当前状态控制合同基本信息、付款条款、开票、收款等功能的操作可用性，供合同台账、编辑、开票、收款等多个功能复用。
+    triggerCondition: 打开合同台账、合同编辑页、开票登记或收款登记时。
+    expression: 草稿状态可修改、可删除、可提交审批、不可开票；审批中不可修改、不可删除、可撤回、不可开票；已生效不可修改删除、可开票、可收款；已关闭仅可查看且可继续收取未收款开票的款项，不可开票。
+    result: 按合同状态启用或禁用相应操作入口，越权操作时阻止并提示。
+    relatedObjects:
+      - OBJ-001
+      - OBJ-002
+    relatedBehaviors:
+      - FUN-001
+      - FUN-002
+      - FUN-003
+      - FUN-004
+      - FUN-005
+      - FUN-009
+      - FUN-011
+    priority: 8
+    enabled: true
+    inputParams: []
+    outputParams: []
+  - id: RULE-009
+    name: 合同查询数据权限规则
+    ruleType: AUTHORIZATION
+    description: 合同、开票、收款、统计报表等查询和查看操作按当前用户岗位控制数据范围，普通员工与销售人员仅限本人所属部门，财务人员、财务经理、总经理可查看全部部门。
+    triggerCondition: 执行合同查询、合同详情查看、开票查询、收款查询、部门统计报表查询或导出时。
+    expression: 当前用户为普通员工或销售人员时，仅返回合同所属部门等于本人所属部门的数据；当前用户为财务人员、财务经理或总经理时，返回全部部门数据。
+    result: 按数据权限过滤查询、查看和统计结果；越权访问详情时提示无权查看该合同。
+    relatedObjects:
+      - OBJ-001
+      - OBJ-003
+      - OBJ-004
+      - MDM-003
+    relatedBehaviors:
+      - FUN-007
+      - FUN-008
+      - FUN-010
+      - FUN-012
+      - FUN-013
+      - FUN-014
+    priority: 9
+    enabled: true
+    inputParams: []
+    outputParams: []
+  - id: RULE-010
+    name: 主数据引用保护规则
+    ruleType: REFERENCE_PROTECTION
+    description: 删除产品、客户、部门、人员或可维护字典项时，检查其是否已被合同、开票、收款或人员等业务数据引用；删除合同时检查是否已产生开票或收款。已被引用的数据禁止删除。
+    triggerCondition: 删除主数据、删除可维护字典项或删除合同时。
+    expression: 被删除数据不存在任何业务引用时允许删除；存在合同、开票、收款或人员等引用时禁止删除；合同存在开票或收款时禁止删除合同。
+    result: 未被引用时允许删除；已被引用时阻止删除并提示被引用情况，可改为修改或停用；合同存在开票或收款时提示不允许删除。
+    relatedObjects:
+      - OBJ-001
+      - OBJ-003
+      - OBJ-004
+      - MDM-001
+      - MDM-002
+      - MDM-003
+      - MDM-004
+      - DIC-001
+      - DIC-004
+      - DIC-005
+      - DIC-006
+    relatedBehaviors:
+      - FUN-003
+      - FUN-015
+      - FUN-016
+      - FUN-017
+      - FUN-018
+      - FUN-019
+    priority: 10
+    enabled: true
+    inputParams: []
+    outputParams: []

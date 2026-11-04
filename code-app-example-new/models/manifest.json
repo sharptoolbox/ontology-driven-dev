@@ -1,0 +1,44 @@
+{
+  "export_type": "ontology_yaml",
+  "project_id": "ca9dad85-3c10-4448-8efd-f45fedfc232a",
+  "project_name_en": "合同管理新模板本体",
+  "generated_at": "2026-11-02T10:56:33.917Z",
+  "files": [
+    {
+      "model_type": "object",
+      "model_name": "对象模型",
+      "file_name": "m1-object-model.yaml",
+      "path": "m1-object-model.yaml"
+    },
+    {
+      "model_type": "behavior",
+      "model_name": "行为模型",
+      "file_name": "m2-behavior-model.yaml",
+      "path": "m2-behavior-model.yaml"
+    },
+    {
+      "model_type": "rule",
+      "model_name": "规则模型",
+      "file_name": "m3-rule-model.yaml",
+      "path": "m3-rule-model.yaml"
+    },
+    {
+      "model_type": "scenario",
+      "model_name": "场景模型",
+      "file_name": "m4-scenario-model.yaml",
+      "path": "m4-scenario-model.yaml"
+    },
+    {
+      "model_type": "actor",
+      "model_name": "主体模型",
+      "file_name": "m5-actor-model.yaml",
+      "path": "m5-actor-model.yaml"
+    },
+    {
+      "model_type": "flow",
+      "model_name": "流程模型",
+      "file_name": "m6-flow-model.yaml",
+      "path": "m6-flow-model.yaml"
+    }
+  ]
+}

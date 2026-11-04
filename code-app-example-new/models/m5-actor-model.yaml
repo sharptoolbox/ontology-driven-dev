@@ -1,0 +1,186 @@
+model_type: ACTOR
+version: "1.0"
+domain: 通用业务
+actors:
+  - actorId: ACT-001
+    name: 销售人员
+    actorType: HUMAN
+    roles:
+      - ROLE-01
+  - actorId: ACT-002
+    name: 财务人员
+    actorType: HUMAN
+    roles:
+      - ROLE-02
+  - actorId: ACT-003
+    name: 财务经理
+    actorType: HUMAN
+    roles:
+      - ROLE-03
+  - actorId: ACT-004
+    name: 总经理
+    actorType: HUMAN
+    roles:
+      - ROLE-04
+  - actorId: ACT-005
+    name: 普通员工
+    actorType: HUMAN
+    roles:
+      - ROLE-05
+roles:
+  - roleId: ROLE-01
+    name: 销售人员
+    inheritsFrom: []
+    permissions:
+      - PERM-001
+      - PERM-002
+      - PERM-003
+      - PERM-004
+      - PERM-005
+      - PERM-007
+      - PERM-008
+      - PERM-010
+      - PERM-012
+      - PERM-013
+      - PERM-014
+  - roleId: ROLE-02
+    name: 财务人员
+    inheritsFrom: []
+    permissions:
+      - PERM-001
+      - PERM-002
+      - PERM-003
+      - PERM-004
+      - PERM-005
+      - PERM-007
+      - PERM-008
+      - PERM-009
+      - PERM-010
+      - PERM-011
+      - PERM-012
+      - PERM-013
+      - PERM-014
+      - PERM-015
+      - PERM-016
+      - PERM-017
+      - PERM-018
+  - roleId: ROLE-03
+    name: 财务经理
+    inheritsFrom: []
+    permissions:
+      - PERM-006
+      - PERM-007
+      - PERM-008
+      - PERM-010
+      - PERM-012
+      - PERM-013
+      - PERM-014
+      - PERM-015
+      - PERM-016
+      - PERM-017
+      - PERM-018
+      - PERM-019
+  - roleId: ROLE-04
+    name: 总经理
+    inheritsFrom: []
+    permissions:
+      - PERM-006
+      - PERM-007
+      - PERM-008
+      - PERM-010
+      - PERM-012
+      - PERM-013
+      - PERM-014
+  - roleId: ROLE-05
+    name: 普通员工
+    inheritsFrom: []
+    permissions:
+      - PERM-007
+      - PERM-008
+      - PERM-010
+      - PERM-012
+      - PERM-013
+      - PERM-014
+permissions:
+  - permissionId: PERM-001
+    targetType: BEHAVIOR
+    targetRef: FUN-001
+    dataScope: OWN
+  - permissionId: PERM-002
+    targetType: BEHAVIOR
+    targetRef: FUN-002
+    dataScope: OWN
+  - permissionId: PERM-003
+    targetType: BEHAVIOR
+    targetRef: FUN-003
+    dataScope: OWN
+  - permissionId: PERM-004
+    targetType: BEHAVIOR
+    targetRef: FUN-004
+    dataScope: OWN
+  - permissionId: PERM-005
+    targetType: BEHAVIOR
+    targetRef: FUN-005
+    dataScope: OWN
+  - permissionId: PERM-006
+    targetType: BEHAVIOR
+    targetRef: FUN-006
+    dataScope: ALL
+  - permissionId: PERM-007
+    targetType: BEHAVIOR
+    targetRef: FUN-007
+    dataScope: CUSTOM
+    abacCondition: 销售人员、普通员工仅可查询所属部门为本人部门的合同；财务人员、财务经理、总经理可查询全部部门合同
+  - permissionId: PERM-008
+    targetType: BEHAVIOR
+    targetRef: FUN-008
+    dataScope: CUSTOM
+    abacCondition: 销售人员、普通员工仅可查看所属部门为本人部门的合同详情；财务人员、财务经理、总经理可查看全部部门合同详情
+  - permissionId: PERM-009
+    targetType: BEHAVIOR
+    targetRef: FUN-009
+    dataScope: ALL
+  - permissionId: PERM-010
+    targetType: BEHAVIOR
+    targetRef: FUN-010
+    dataScope: CUSTOM
+    abacCondition: 销售人员、普通员工仅可查询所属部门为本人部门的开票信息；财务人员、财务经理、总经理可查询全部部门开票信息
+  - permissionId: PERM-011
+    targetType: BEHAVIOR
+    targetRef: FUN-011
+    dataScope: ALL
+  - permissionId: PERM-012
+    targetType: BEHAVIOR
+    targetRef: FUN-012
+    dataScope: CUSTOM
+    abacCondition: 销售人员、普通员工仅可查询所属部门为本人部门的收款信息；财务人员、财务经理、总经理可查询全部部门收款信息
+  - permissionId: PERM-013
+    targetType: BEHAVIOR
+    targetRef: FUN-013
+    dataScope: CUSTOM
+    abacCondition: 销售人员、普通员工仅可统计本人所属部门；财务人员、财务经理、总经理可统计全部部门
+  - permissionId: PERM-014
+    targetType: BEHAVIOR
+    targetRef: FUN-014
+    dataScope: CUSTOM
+    abacCondition: 导出权限与报表查询一致；销售人员、普通员工仅可导出本人所属部门数据，财务人员、财务经理、总经理可导出全部部门数据
+  - permissionId: PERM-015
+    targetType: BEHAVIOR
+    targetRef: FUN-015
+    dataScope: ALL
+  - permissionId: PERM-016
+    targetType: BEHAVIOR
+    targetRef: FUN-016
+    dataScope: ALL
+  - permissionId: PERM-017
+    targetType: BEHAVIOR
+    targetRef: FUN-017
+    dataScope: ALL
+  - permissionId: PERM-018
+    targetType: BEHAVIOR
+    targetRef: FUN-018
+    dataScope: ALL
+  - permissionId: PERM-019
+    targetType: BEHAVIOR
+    targetRef: FUN-019
+    dataScope: ALL

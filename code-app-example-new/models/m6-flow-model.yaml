@@ -1,0 +1,87 @@
+model_type: FLOW
+version: "1.0"
+domain: 通用业务
+flows:
+  - id: APR-001
+    name: 合同创建审批
+    flowType: APPROVAL
+    description: 由 FUN-004 合同提交审批发起。适用于全部新建合同：合同总金额小于 100 万元时，仅由财务经理一级审批；合同总金额大于等于 100 万元时，财务经理审批通过后流转总经理二级审批。财务经理驳回时不再流转总经理。审批通过后合同状态由审批中变为已生效并写入生效时间；驳回后合同状态退回草稿。合同审批中且当前审批人尚未处理时，创建人可撤回，流程终止并退回草稿；撤回或驳回后可重新提交，重新走完整审批路径。
+    startActivity: ACT-APR-001-01
+    endActivities:
+      - ACT-APR-001-05
+      - ACT-APR-001-06
+    # 引擎可执行图：活动、分支与结束结果均与下方 activities 语义一致，
+    # 仅将“审批通过后按金额分流”显式表达为金额判断网关，便于现有流程引擎执行。
+    nodeGraph:
+      nodes:
+        - id: ACT-APR-001-01
+          type: start
+          name: 合同提交审批发起
+        - id: ACT-APR-001-02
+          type: approval_task
+          name: 财务经理审批
+          role_ref: ROLE-03
+          outcomes: [APPROVE, REJECT]
+        - id: GW-APR-001-AMOUNT
+          type: gateway
+          name: 合同总金额判断
+          branches:
+            - name: 合同总金额大于等于 100 万元
+              condition: total_amount >= 1000000
+              target: ACT-APR-001-03
+            - name: 合同总金额小于 100 万元
+              target: ACT-APR-001-05
+              is_default: true
+        - id: ACT-APR-001-03
+          type: approval_task
+          name: 总经理审批
+          role_ref: ROLE-04
+          outcomes: [APPROVE, REJECT]
+        - id: ACT-APR-001-05
+          type: end
+          name: 审批通过结束（合同已生效）
+          result: APPROVED
+        - id: ACT-APR-001-06
+          type: end
+          name: 审批驳回结束（合同退回草稿）
+          result: REJECTED
+      edges:
+        - {source: ACT-APR-001-01, target: ACT-APR-001-02}
+        - {source: ACT-APR-001-02, target: GW-APR-001-AMOUNT, approval_outcome: APPROVE}
+        - {source: ACT-APR-001-02, target: ACT-APR-001-06, approval_outcome: REJECT}
+        - {source: GW-APR-001-AMOUNT, target: ACT-APR-001-03}
+        - {source: GW-APR-001-AMOUNT, target: ACT-APR-001-05}
+        - {source: ACT-APR-001-03, target: ACT-APR-001-05, approval_outcome: APPROVE}
+        - {source: ACT-APR-001-03, target: ACT-APR-001-06, approval_outcome: REJECT}
+    activities:
+      - activityId: ACT-APR-001-01
+        name: 合同提交审批发起
+        activityType: START
+        nextActivities:
+          - ACT-APR-001-02
+      - activityId: ACT-APR-001-02
+        name: 财务经理审批
+        activityType: APPROVAL
+        assigneeRole: ROLE-03
+        branches:
+          - condition: 审批通过且合同总金额小于 100 万元
+            targetActivity: ACT-APR-001-05
+          - condition: 审批通过且合同总金额大于等于 100 万元
+            targetActivity: ACT-APR-001-03
+          - condition: 审批驳回
+            targetActivity: ACT-APR-001-06
+      - activityId: ACT-APR-001-03
+        name: 总经理审批
+        activityType: APPROVAL
+        assigneeRole: ROLE-04
+        branches:
+          - condition: 审批通过
+            targetActivity: ACT-APR-001-05
+          - condition: 审批驳回
+            targetActivity: ACT-APR-001-06
+      - activityId: ACT-APR-001-05
+        name: 审批通过结束（合同已生效）
+        activityType: END
+      - activityId: ACT-APR-001-06
+        name: 审批驳回结束（合同退回草稿）
+        activityType: END

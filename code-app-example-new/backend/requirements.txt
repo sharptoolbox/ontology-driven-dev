@@ -1,0 +1,5 @@
+Flask==3.0.3
+PyJWT==2.8.0
+PyYAML==6.0.1
+python-dotenv==1.0.1
+simpleeval==0.9.13

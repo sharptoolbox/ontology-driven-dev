@@ -1,0 +1,559 @@
+model_type: BEHAVIOR
+version: "1.0"
+domain: 通用业务
+behaviors:
+  - id: FUN-001
+    name: 合同新增
+    behaviorType: ""
+    ownerEntity: OBJ-001
+    description: 销售人员或财务人员在一张合同单据中录入合同基本信息及合同付款条款，保存后生成草稿合同。合同编号、创建人、创建时间、合同状态、累计开票金额、累计收款金额、生效时间、关闭时间由系统生成或维护，页面只读、不可修改。付款条款作为合同子对象随合同一起保存。
+    preconditions: 已登录且具备合同创建权限；产品、客户、部门、人员、合同类型基础数据已存在。
+    operationSteps:
+      - stepId: FUN-001-S01
+        name: 打开合同新增页面
+        actor: 销售人员、财务人员
+        description: 在合同台账点击新增合同，系统预生成合同编号并在页面只读显示；合同状态默认草稿，累计开票金额和累计收款金额默认0.00，生效时间、关闭时间为空。
+      - stepId: FUN-001-S02
+        name: 录入合同基本信息
+        actor: 销售人员、财务人员
+        description: 录入合同名称、所属产品、所属客户、责任人、所属部门、合同类型、合同签订时间、合同总金额、合同对外采购金额、合同税率和备注；选择责任人后自动带出其所属部门并允许改为其他已存在部门；合同编号、创建人、创建时间、合同状态、累计开票金额、累计收款金额、生效时间、关闭时间为只读、不可修改。
+      - stepId: FUN-001-S03
+        name: 录入付款条款
+        actor: 销售人员、财务人员
+        description: 在付款条款区域新增条款，逐行录入付款阶段名称、付款比例和阶段付款条件；系统按行顺序自动生成付款阶段编号，按合同总金额乘付款比例除以100计算该比例金额并只读显示；开票状态默认未开票，关联开票编号为空。
+      - stepId: FUN-001-S04
+        name: 实时校验付款条款
+        actor: 销售人员、财务人员
+        description: 页面实时显示条款条数、比例合计和金额合计；保存时校验付款条款至少1条、全部条款付款比例合计等于100.00%，阶段金额合计与合同总金额差异不超过0.01元；不满足时以红色提示并阻止保存。
+      - stepId: FUN-001-S05
+        name: 保存草稿或保存并提交审批
+        actor: 销售人员、财务人员
+        description: 点击保存草稿时，校验通过后保存合同及全部付款条款，状态为草稿并提示保存成功；点击保存并提交审批时，先保存再执行FUN-004合同提交审批；点击取消时不保存并返回合同台账。
+    relatedEntities:
+      - OBJ-001
+      - OBJ-002
+    relatedRules:
+      - RULE-001
+      - RULE-002
+      - RULE-008
+  - id: FUN-002
+    name: 合同修改
+    behaviorType: ""
+    ownerEntity: OBJ-001
+    description: 销售人员或财务人员对本人创建且状态为草稿的合同进行修改，带出合同基本信息与付款条款；系统维护字段只读、不可修改，仅维护允许编辑的业务属性。
+    preconditions: 合同状态为草稿；当前用户为合同创建人。
+    operationSteps:
+      - stepId: FUN-002-S01
+        name: 打开合同编辑页面
+        actor: 销售人员、财务人员
+        description: 在合同台账对目标草稿合同点击修改，打开编辑页面并带出全部合同基本信息与付款条款；合同编号、创建人、创建时间、合同状态、累计开票金额、累计收款金额、生效时间、关闭时间均为只读、不可修改。
+      - stepId: FUN-002-S02
+        name: 修改基本信息
+        actor: 销售人员、财务人员
+        description: 仅可修改合同名称、所属产品、所属客户、所属部门、合同类型、合同签订时间、责任人、合同总金额、合同对外采购金额、合同税率和备注等可编辑属性；合同编号、创建人、创建时间、合同状态、累计开票金额、累计收款金额、生效时间、关闭时间不得修改。
+      - stepId: FUN-002-S03
+        name: 维护付款条款
+        actor: 销售人员、财务人员
+        description: 可新增付款条款、删除未开票的付款条款并调整条款行顺序，阶段编号随行顺序重排；已开票阶段及其关联开票编号只读、不可修改；修改合同总金额或任一付款比例后，全部未开票条款按合同总金额乘比例除以100重新计算该比例金额。
+      - stepId: FUN-002-S04
+        name: 保存修改
+        actor: 销售人员、财务人员
+        description: 保存时执行完整校验，包括付款条款至少1条、比例合计等于100.00%、阶段金额合计与合同总金额差异不超过0.01元；校验通过后覆盖原合同及付款条款内容，状态仍为草稿；若合同曾被驳回，修改后保留驳回意见供参考。
+      - stepId: FUN-002-S05
+        name: 修改后提交审批
+        actor: 销售人员、财务人员
+        description: 点击保存并提交审批时，先保存修改内容，再执行FUN-004合同提交审批；重新提交时清空上一轮审批状态并按合同总金额重新判定审批级次。
+    relatedEntities:
+      - OBJ-001
+      - OBJ-002
+    relatedRules:
+      - RULE-001
+      - RULE-002
+      - RULE-008
+  - id: FUN-003
+    name: 合同删除
+    behaviorType: ""
+    ownerEntity: OBJ-001
+    description: 销售人员或财务人员删除本人创建且尚未产生开票、收款的草稿合同，合同及其全部付款条款一并删除，合同编号不再复用。
+    preconditions: 合同状态为草稿；当前用户为合同创建人；该合同尚未产生任何开票与收款。
+    operationSteps:
+      - stepId: FUN-003-S01
+        name: 发起删除
+        actor: 销售人员、财务人员
+        description: 在合同台账对目标草稿合同点击删除，系统弹出确认框并显示合同编号、合同名称，提示删除后该合同的付款条款一并删除且不可恢复。
+      - stepId: FUN-003-S02
+        name: 删除前校验
+        actor: 销售人员、财务人员、系统
+        description: 系统校验合同状态必须为草稿、当前用户必须为创建人、合同不得存在开票或收款记录；不满足时阻止删除并提示原因。
+      - stepId: FUN-003-S03
+        name: 确认删除
+        actor: 销售人员、财务人员
+        description: 点击确认删除后，系统删除合同及其全部付款条款，合同编号不再复用，返回合同台账并提示删除成功。
+    relatedEntities:
+      - OBJ-001
+      - OBJ-002
+    relatedRules:
+      - RULE-008
+      - RULE-010
+  - id: FUN-004
+    name: 合同提交审批
+    behaviorType: SUBMIT
+    ownerEntity: OBJ-001
+    description: 销售人员或财务人员将本人创建的草稿合同提交审批，系统校验付款条款完整性和比例合计后，按合同总金额判定审批路径并生成审批任务。
+    preconditions: 合同状态为草稿；必填字段齐全；付款条款至少1条且付款比例合计等于100.00%。
+    operationSteps:
+      - stepId: FUN-004-S01
+        name: 发起提交审批
+        actor: 销售人员、财务人员
+        description: 在合同台账或合同编辑页点击提交审批，系统校验付款条款完整性与比例合计；不满足时提示付款条款比例合计必须为100.00%并中止提交。
+      - stepId: FUN-004-S02
+        name: 确认审批路径
+        actor: 销售人员、财务人员
+        description: 校验通过后弹出确认框，显示合同编号、合同名称、合同总金额以及审批路径说明：合同总金额小于100万元时流转至财务经理审批，大于等于100万元时流转至财务经理和总经理两级审批。
+      - stepId: FUN-004-S03
+        name: 提交并生成审批任务
+        actor: 销售人员、财务人员、系统
+        description: 点击确认提交后，合同状态由草稿改为审批中，记录提交时间与提交人，生成APR-001合同创建审批任务；审批中合同不可修改、不可删除、不可开票。
+    relatedEntities:
+      - OBJ-001
+      - OBJ-002
+    relatedRules:
+      - RULE-001
+      - RULE-008
+  - id: FUN-005
+    name: 合同撤回
+    behaviorType: WITHDRAW
+    ownerEntity: OBJ-001
+    description: 销售人员或财务人员对本人创建且处于审批中的合同发起撤回，合同退回草稿，审批记录保留为已撤回。
+    preconditions: 合同状态为审批中；当前用户为合同创建人；合同尚未被当前审批人处理；若财务经理已通过但总经理尚未处理，撤回时需要提示已通过环节。
+    operationSteps:
+      - stepId: FUN-005-S01
+        name: 发起撤回
+        actor: 销售人员、财务人员
+        description: 在合同台账对审批中的合同点击撤回，系统校验当前用户为创建人且当前审批环节尚未被处理；若财务经理已通过而总经理尚未处理，提示已通过环节后允许创建人撤回。
+      - stepId: FUN-005-S02
+        name: 确认撤回
+        actor: 销售人员、财务人员
+        description: 系统弹出确认框提示撤回后合同退回草稿、已产生的审批意见保留；点击确认撤回后，合同状态由审批中改为草稿，审批任务终止，审批记录标记为已撤回。
+      - stepId: FUN-005-S03
+        name: 恢复草稿操作
+        actor: 销售人员、财务人员、系统
+        description: 撤回成功后合同恢复为可修改、可删除状态；已撤回合同可修改后重新提交，重新提交时重新走完整审批路径。
+    relatedEntities:
+      - OBJ-001
+    relatedRules:
+      - RULE-008
+  - id: FUN-006
+    name: 合同审批处理
+    behaviorType: APPROVE
+    ownerEntity: OBJ-001
+    description: 财务经理或总经理在合同审批菜单处理待审批合同，查看合同基本信息、付款条款、金额、税率和审批历史，选择通过或驳回并填写审批意见；系统按审批路径和合同总金额决定流转或结束。
+    preconditions: 存在流转至当前审批人的待审批合同；合同状态为审批中。
+    operationSteps:
+      - stepId: FUN-006-S01
+        name: 查询待我审批合同
+        actor: 财务经理、总经理
+        description: 进入合同审批菜单，默认显示待我审批列表，可按合同编号、合同名称、提交人、提交时间筛选；点击审批打开审批弹窗，查看合同基本信息、付款条款、金额与税率，并可查看审批历史。
+      - stepId: FUN-006-S02
+        name: 选择审批结果
+        actor: 财务经理、总经理
+        description: 选择通过或驳回并填写审批意见；通过时审批意见可不填，驳回时审批意见必填且最多200字。
+      - stepId: FUN-006-S03
+        name: 按审批路径流转
+        actor: 财务经理、总经理、系统
+        description: 财务经理通过且合同总金额小于100万元时，合同状态改为已生效并写入生效时间；财务经理通过且合同总金额大于等于100万元时，流转至总经理审批，合同状态仍为审批中；总经理通过后合同状态改为已生效并写入生效时间。
+      - stepId: FUN-006-S04
+        name: 驳回处理
+        actor: 财务经理、总经理、系统
+        description: 任一审批环节驳回时，合同状态由审批中退回草稿并记录驳回意见；驳回后不再流转后续审批人，创建人可修改后重新提交。
+      - stepId: FUN-006-S05
+        name: 查看审批历史
+        actor: 财务经理、总经理
+        description: 可在我已审批页签查看本人历史审批记录，包括审批环节、审批人、审批结果、审批意见和审批时间。
+    relatedEntities:
+      - OBJ-001
+      - OBJ-002
+    relatedRules:
+      - RULE-008
+  - id: FUN-007
+    name: 合同信息查询
+    behaviorType: QUERY
+    ownerEntity: OBJ-001
+    description: 全部角色按数据权限查询合同台账，支持多条件筛选、重置、分页浏览和查看详情入口；普通员工与销售人员仅可查询所属部门为本部门的合同，其他角色可查询全部部门合同。
+    preconditions: 已登录。
+    operationSteps:
+      - stepId: FUN-007-S01
+        name: 进入合同台账
+        actor: 全部角色
+        description: 进入合同台账菜单，页面显示查询条件区和合同列表区，按当前用户数据权限过滤可见合同范围。
+      - stepId: FUN-007-S02
+        name: 输入查询条件
+        actor: 全部角色
+        description: 支持按合同编号模糊、合同名称模糊、产品名称模糊或下拉选择产品、产品类型、所属部门、合同类型、合同状态、合同签订时间起止、客户名称模糊进行筛选；点击重置清空全部查询条件。
+      - stepId: FUN-007-S03
+        name: 执行查询并展示结果
+        actor: 全部角色、系统
+        description: 点击查询后，系统返回当前用户权限范围内且符合全部查询条件的合同，按合同签订时间倒序排列并分页展示；列表展示合同编号、合同名称、所属产品、所属客户、所属部门、合同类型、合同签订时间、责任人、合同总金额、累计开票金额、累计收款金额、合同状态和操作。
+      - stepId: FUN-007-S04
+        name: 查看详情入口
+        actor: 全部角色
+        description: 点击列表行的查看按钮进入FUN-008合同详情查看；列表按钮可用性按合同状态控制，草稿显示修改、删除、提交审批，审批中显示撤回，已生效和已关闭仅显示查看。
+    relatedEntities:
+      - OBJ-001
+    relatedRules:
+      - RULE-008
+      - RULE-009
+  - id: FUN-008
+    name: 合同详情查看
+    behaviorType: QUERY
+    ownerEntity: OBJ-001
+    description: 全部角色按数据权限只读查看合同详情，包括合同基本信息、付款条款、开票记录、收款记录和审批记录；详情查看受合同数据权限限制，越权访问时提示无权查看该合同。
+    preconditions: 在合同台账、开票列表或收款列表点击查看；当前用户具有该合同的数据权限。
+    operationSteps:
+      - stepId: FUN-008-S01
+        name: 查看合同基本信息
+        actor: 全部角色
+        description: 打开合同详情页，只读展示合同编号、合同名称、所属产品、所属客户、所属部门、合同类型、责任人、签订时间、合同总金额、对外采购金额、合同税率、合同状态、累计开票金额、累计收款金额、生效时间、关闭时间、创建人和创建时间。
+      - stepId: FUN-008-S02
+        name: 查看付款条款页签
+        actor: 全部角色
+        description: 展示该合同全部付款条款，包括付款阶段编号、阶段名称、付款比例、该比例金额、阶段付款条件、开票状态和关联开票编号。
+      - stepId: FUN-008-S03
+        name: 查看开票记录页签
+        actor: 全部角色
+        description: 展示该合同的开票编号、开票金额、开票税率、开票时间、收款状态、累计已收款和未收款金额。
+      - stepId: FUN-008-S04
+        name: 查看收款记录页签
+        actor: 全部角色
+        description: 展示收款编号、对应开票编号、收款金额、收款时间、收款方式和收款登记人。
+      - stepId: FUN-008-S05
+        name: 查看审批记录并返回
+        actor: 全部角色
+        description: 展示APR-001合同创建审批记录，包括审批环节、审批岗位、审批人、审批结果、审批意见和审批时间；详情页只读，不修改任何数据，点击返回回到来源列表。
+    relatedEntities:
+      - OBJ-001
+      - OBJ-002
+      - OBJ-003
+      - OBJ-004
+    relatedRules:
+      - RULE-009
+  - id: FUN-009
+    name: 合同开票登记
+    behaviorType: REGISTER
+    ownerEntity: OBJ-003
+    description: 财务人员选择已生效合同及其未开票付款阶段登记开票，开票金额按阶段金额自动带出且只读、不可修改，开票税率默认取合同税率并允许修改；开票成功后锁定对应付款阶段并回填开票编号。
+    preconditions: 存在状态为已生效的合同，且该合同下存在开票状态为未开票的付款阶段。
+    operationSteps:
+      - stepId: FUN-009-S01
+        name: 选择合同与付款阶段
+        actor: 财务人员
+        description: 进入合同开票菜单点击开票登记，选择对应合同，仅可选中已生效合同并支持按合同编号或名称模糊检索；系统带出该合同下未开票的付款阶段供选择。
+      - stepId: FUN-009-S02
+        name: 带出开票金额与税率
+        actor: 财务人员、系统
+        description: 选择付款阶段后，系统自动带出开票金额为该阶段该比例金额并只读、不可修改；开票税率默认取合同税率，允许在0至100之间修改。
+      - stepId: FUN-009-S03
+        name: 录入开票时间与备注
+        actor: 财务人员
+        description: 开票时间默认当天，不早于合同生效日期且不晚于当前日期；可录入备注。
+      - stepId: FUN-009-S04
+        name: 校验并保存开票
+        actor: 财务人员、系统
+        description: 保存时校验所选付款阶段开票状态为未开票且不存在开票记录、开票金额等于阶段金额、开票日期合规；不满足时阻止保存并提示原因，满足时生成开票编号并保存开票记录。
+      - stepId: FUN-009-S05
+        name: 更新阶段与合同累计开票
+        actor: 系统
+        description: 开票成功后，对应付款阶段开票状态置为已开票并回填关联开票编号；开票记录收款状态为未收款，累计已收款为0.00，未收款金额等于开票金额；合同累计开票金额同步更新。
+    relatedEntities:
+      - OBJ-003
+      - OBJ-002
+      - OBJ-001
+    relatedRules:
+      - RULE-003
+      - RULE-004
+      - RULE-008
+  - id: FUN-010
+    name: 开票信息查询
+    behaviorType: QUERY
+    ownerEntity: OBJ-003
+    description: 财务人员、财务经理、总经理及普通员工按数据权限查询开票信息，支持条件筛选、重置和分页浏览；普通员工与销售人员仅可查询本部门数据。
+    preconditions: 已登录。
+    operationSteps:
+      - stepId: FUN-010-S01
+        name: 进入合同开票菜单
+        actor: 财务人员、财务经理、总经理、普通员工
+        description: 进入合同开票菜单，页面下部显示开票列表，按当前用户数据权限过滤可见开票范围。
+      - stepId: FUN-010-S02
+        name: 输入开票查询条件
+        actor: 财务人员、财务经理、总经理、普通员工
+        description: 支持按开票编号模糊、合同编号模糊、合同名称模糊、开票时间起止和收款状态筛选；点击重置清空全部条件。
+      - stepId: FUN-010-S03
+        name: 展示开票列表
+        actor: 财务人员、财务经理、总经理、普通员工、系统
+        description: 点击查询后按开票时间倒序分页展示开票记录，展示列包括开票编号、对应合同编号、合同名称、付款阶段名称、开票金额、开票税率、开票时间、收款状态、累计已收款、未收款金额和开票人。
+    relatedEntities:
+      - OBJ-003
+      - OBJ-001
+      - OBJ-002
+    relatedRules:
+      - RULE-009
+  - id: FUN-011
+    name: 合同收款登记
+    behaviorType: REGISTER
+    ownerEntity: OBJ-004
+    description: 财务人员选择已生效或已关闭合同下的未收款或部分收款开票登记收款，允许一笔开票多次收款，系统控制累计收款不超过开票金额，并自动更新开票收款状态和合同累计收款金额。
+    preconditions: 存在已生效或已关闭合同下收款状态为未收款或部分收款的开票。
+    operationSteps:
+      - stepId: FUN-011-S01
+        name: 选择合同与开票
+        actor: 财务人员
+        description: 进入合同收款菜单点击收款登记，先选择对应合同，再选择该合同下可收款的开票；下拉显示开票编号、付款阶段名称和未收款金额，不得选择已收款的开票。
+      - stepId: FUN-011-S02
+        name: 查看开票收款信息
+        actor: 财务人员、系统
+        description: 系统只读显示所选开票的开票金额、累计已收款和未收款金额，供录入收款金额时参考。
+      - stepId: FUN-011-S03
+        name: 录入收款信息
+        actor: 财务人员
+        description: 录入收款金额、收款时间、收款方式和备注；收款金额必须大于0且不大于所选开票未收款金额，可点击收全部余额自动填入未收款金额；收款时间默认当天，不早于所选开票的开票时间且不晚于当前日期；收款方式只能选择已启用的收款方式字典项。
+      - stepId: FUN-011-S04
+        name: 校验并保存收款
+        actor: 财务人员、系统
+        description: 点击确定后系统校验收款金额上限和收款时间合法性；超出未收款金额时提示本次收款金额不得超过该开票未收款金额，日期不合规时提示收款时间不得早于开票时间；校验通过后生成收款编号并保存收款记录。
+      - stepId: FUN-011-S05
+        name: 更新开票收款状态
+        actor: 系统
+        description: 收款保存成功后，更新该开票的累计已收款、未收款金额、最后收款时间和收款状态；累计已收款为0时为未收款，大于0且小于开票金额为部分收款，等于开票金额为已收款；同时更新合同累计收款金额。
+      - stepId: FUN-011-S06
+        name: 判断合同自动关闭
+        actor: 系统
+        description: 若该开票收款状态变为已收款，系统检查该合同下全部开票是否均已开票且收款状态均为已收款；满足时合同状态由已生效自动改为已关闭并写入关闭时间，不满足时保持已生效；系统不提供人工关闭入口。
+    relatedEntities:
+      - OBJ-004
+      - OBJ-003
+      - OBJ-001
+    relatedRules:
+      - RULE-005
+      - RULE-006
+      - RULE-007
+      - RULE-008
+  - id: FUN-012
+    name: 收款信息查询
+    behaviorType: QUERY
+    ownerEntity: OBJ-004
+    description: 财务人员、财务经理、总经理及普通员工按数据权限查询收款信息，支持条件筛选、重置和分页浏览；普通员工与销售人员仅可查询本部门数据。
+    preconditions: 已登录。
+    operationSteps:
+      - stepId: FUN-012-S01
+        name: 进入合同收款菜单
+        actor: 财务人员、财务经理、总经理、普通员工
+        description: 进入合同收款菜单，页面下部显示收款列表，按当前用户数据权限过滤可见收款范围。
+      - stepId: FUN-012-S02
+        name: 输入收款查询条件
+        actor: 财务人员、财务经理、总经理、普通员工
+        description: 支持按收款编号模糊、合同编号模糊、开票编号模糊、收款时间起止和收款方式筛选；点击重置清空全部条件。
+      - stepId: FUN-012-S03
+        name: 展示收款列表
+        actor: 财务人员、财务经理、总经理、普通员工、系统
+        description: 点击查询后按收款时间倒序分页展示收款记录，展示列包括收款编号、对应合同编号、合同名称、对应开票编号、收款金额、收款时间、收款方式、收款登记人和备注。
+    relatedEntities:
+      - OBJ-004
+      - OBJ-003
+      - OBJ-001
+    relatedRules:
+      - RULE-009
+  - id: FUN-013
+    name: 部门合同统计分析报表
+    behaviorType: QUERY
+    ownerEntity: OBJ-001
+    description: 全部角色按数据权限查询部门合同统计分析报表，按部门和统计时间段汇总合同签订总金额、开票总金额和已开票未收款金额，按部门逐行输出并在末行显示合计行；普通员工与销售人员仅统计本人所属部门。
+    preconditions: 已登录；统计时间段必填。
+    operationSteps:
+      - stepId: FUN-013-S01
+        name: 选择统计条件
+        actor: 全部角色
+        description: 进入部门合同统计菜单，选择部门并可多选，默认按权限展示全部可见部门；选择统计起止时间，必填，默认本月1日至当天；点击重置恢复默认条件。
+      - stepId: FUN-013-S02
+        name: 按部门汇总统计
+        actor: 全部角色、系统
+        description: 点击查询后按部门逐行输出统计结果；合同签订总金额统计统计时间段内合同签订时间落在区间内且合同状态为审批中、已生效或已关闭的合同总金额之和，草稿不计入；开票总金额统计统计时间段内开票时间落在区间内且对应合同属于该部门的开票金额之和。
+      - stepId: FUN-013-S03
+        name: 计算已开票未收款金额
+        actor: 系统
+        description: 已开票未收款金额统计统计时间段内开票的发票截至统计期末的开票金额减该开票累计已收款金额之和，采用期末余额口径，结果不小于0。
+      - stepId: FUN-013-S04
+        name: 展示合计行与权限过滤
+        actor: 全部角色、系统
+        description: 报表按部门编号排序分页展示，展示列包括序号、部门编号、部门名称、合同签订总金额、开票总金额和已开票未收款金额，末行为各列按部门汇总相加的合计行；普通员工和销售人员仅统计本人所属部门，其他角色统计权限范围内全部部门。
+    relatedEntities:
+      - OBJ-001
+      - OBJ-003
+      - OBJ-004
+      - MDM-003
+    relatedRules:
+      - RULE-009
+  - id: FUN-014
+    name: 统计报表导出
+    behaviorType: QUERY
+    ownerEntity: OBJ-001
+    description: 在部门合同统计分析报表完成查询后，按当前查询条件将报表结果导出为Excel文件，导出内容与当前查询结果完全一致，包含合计行，不含下钻明细。建模补充假设：导出文件由系统生成，文件名包含统计时间段。
+    preconditions: 已按FUN-013完成一次部门合同统计查询。
+    operationSteps:
+      - stepId: FUN-014-S01
+        name: 发起导出
+        actor: 与FUN-013报表查询角色一致
+        description: 在部门合同统计页面点击导出，系统弹出确认框显示统计时间段、部门范围和数据行数。
+      - stepId: FUN-014-S02
+        name: 确认导出
+        actor: 与FUN-013报表查询角色一致
+        description: 点击确认导出后，系统按当前查询条件生成Excel文件，文件名包含统计时间段，导出内容与当前查询结果完全一致并包含合计行，不含下钻明细。
+    relatedEntities:
+      - OBJ-001
+      - OBJ-003
+      - OBJ-004
+      - MDM-003
+    relatedRules:
+      - RULE-009
+  - id: FUN-015
+    name: 产品信息维护
+    behaviorType: MAINTAIN
+    ownerEntity: MDM-001
+    description: 财务人员或财务经理维护产品基础数据，包括按条件查询、新增、修改和删除；产品编号保存后只读、不可修改，产品编号和产品名称必须唯一，已被合同引用的产品不允许删除。
+    preconditions: 已登录且具备基础数据维护权限。
+    operationSteps:
+      - stepId: FUN-015-S01
+        name: 查询产品
+        actor: 财务人员、财务经理
+        description: 进入产品信息菜单，可按产品编号、产品名称模糊和产品类型筛选，列表分页展示产品编号、产品类型、产品名称和操作。
+      - stepId: FUN-015-S02
+        name: 新增产品
+        actor: 财务人员、财务经理
+        description: 点击新增，弹窗录入产品编号、产品类型和产品名称；保存时校验产品编号和产品名称唯一，校验通过后保存并立即生效，合同新增时可选。
+      - stepId: FUN-015-S03
+        name: 修改产品
+        actor: 财务人员、财务经理
+        description: 点击行内修改，产品编号只读、不可修改，仅可修改产品类型和产品名称；保存时校验产品名称唯一。
+      - stepId: FUN-015-S04
+        name: 删除产品
+        actor: 财务人员、财务经理、系统
+        description: 点击行内删除，系统校验该产品是否被合同引用；未被引用时弹出确认后删除，已引用时提示该产品已被合同引用、不允许删除。
+    relatedEntities:
+      - MDM-001
+    relatedRules:
+      - RULE-010
+  - id: FUN-016
+    name: 客户信息维护
+    behaviorType: MAINTAIN
+    ownerEntity: MDM-002
+    description: 财务人员或财务经理维护客户基础数据，包括按条件查询、新增、修改和删除；客户编号保存后只读、不可修改，客户编号和客户名称必须唯一，已被合同引用的客户不允许删除。
+    preconditions: 已登录且具备基础数据维护权限。
+    operationSteps:
+      - stepId: FUN-016-S01
+        name: 查询客户
+        actor: 财务人员、财务经理
+        description: 进入客户信息菜单，可按客户编号、客户名称模糊和客户类型筛选，列表分页展示客户编号、客户类型、客户名称和操作。
+      - stepId: FUN-016-S02
+        name: 新增客户
+        actor: 财务人员、财务经理
+        description: 点击新增，弹窗录入客户编号、客户类型和客户名称；保存时校验客户编号和客户名称唯一，校验通过后保存并立即生效。
+      - stepId: FUN-016-S03
+        name: 修改客户
+        actor: 财务人员、财务经理
+        description: 点击行内修改，客户编号只读、不可修改，仅可修改客户类型和客户名称；保存时校验客户名称唯一。
+      - stepId: FUN-016-S04
+        name: 删除客户
+        actor: 财务人员、财务经理、系统
+        description: 点击行内删除，系统校验该客户是否被合同引用；未被引用时弹出确认后删除，已引用时提示该客户已被合同引用、不允许删除。
+    relatedEntities:
+      - MDM-002
+    relatedRules:
+      - RULE-010
+  - id: FUN-017
+    name: 部门信息维护
+    behaviorType: MAINTAIN
+    ownerEntity: MDM-003
+    description: 财务人员或财务经理维护部门基础数据，包括按条件查询、新增、修改和删除；部门编号保存后只读、不可修改，部门编号和部门名称必须唯一，已被合同或人员引用的部门不允许删除。
+    preconditions: 已登录且具备基础数据维护权限。
+    operationSteps:
+      - stepId: FUN-017-S01
+        name: 查询部门
+        actor: 财务人员、财务经理
+        description: 进入部门信息菜单，可按部门编号和部门名称模糊查询，列表分页展示部门编号、部门名称和操作。
+      - stepId: FUN-017-S02
+        name: 新增部门
+        actor: 财务人员、财务经理
+        description: 点击新增，弹窗录入部门编号和部门名称；保存时校验部门编号和部门名称唯一，校验通过后保存并立即生效，影响合同所属部门选择和报表统计维度。
+      - stepId: FUN-017-S03
+        name: 修改部门
+        actor: 财务人员、财务经理
+        description: 点击行内修改，部门编号只读、不可修改，仅可修改部门名称；保存时校验部门名称唯一。
+      - stepId: FUN-017-S04
+        name: 删除部门
+        actor: 财务人员、财务经理、系统
+        description: 点击行内删除，系统校验该部门是否被合同或人员引用；未被引用时弹出确认后删除，已引用时提示该部门已被合同或人员引用、不允许删除。
+    relatedEntities:
+      - MDM-003
+    relatedRules:
+      - RULE-010
+  - id: FUN-018
+    name: 人员信息维护
+    behaviorType: MAINTAIN
+    ownerEntity: MDM-004
+    description: 财务人员或财务经理维护人员基础数据，包括按条件查询、新增、修改和删除；人员编号保存后只读、不可修改，人员编号必须唯一，已被合同引用的人员不允许删除；人员所属部门影响合同新增时默认部门和数据权限范围。
+    preconditions: 已登录且具备基础数据维护权限；所属部门已存在。
+    operationSteps:
+      - stepId: FUN-018-S01
+        name: 查询人员
+        actor: 财务人员、财务经理
+        description: 进入人员信息菜单，可按人员编号、人员名称模糊和所属部门筛选，列表分页展示人员编号、人员名称、所属部门和操作。
+      - stepId: FUN-018-S02
+        name: 新增人员
+        actor: 财务人员、财务经理
+        description: 点击新增，弹窗录入人员编号、人员名称和所属部门；保存时校验人员编号唯一、所属部门存在，校验通过后保存并立即生效。
+      - stepId: FUN-018-S03
+        name: 修改人员
+        actor: 财务人员、财务经理
+        description: 点击行内修改，人员编号只读、不可修改，仅可修改人员名称和所属部门；保存时校验所属部门存在。
+      - stepId: FUN-018-S04
+        name: 删除人员
+        actor: 财务人员、财务经理、系统
+        description: 点击行内删除，系统校验该人员是否被合同引用为责任人或创建人；未被引用时弹出确认后删除，已引用时提示该人员已被合同引用、不允许删除。
+    relatedEntities:
+      - MDM-004
+      - MDM-003
+    relatedRules:
+      - RULE-010
+  - id: FUN-019
+    name: 合同类型及基础字典维护
+    behaviorType: MAINTAIN
+    ownerEntity: DIC-001
+    description: 财务经理维护合同类型、产品类型、客户类型和收款方式字典，包括按分类查询、新增字典项、修改、删除和启停用；合同状态与开票收款状态只读展示、不可维护；字典编码保存后只读、不可修改，字典编码和名称必须唯一，已被业务数据引用的字典项不允许删除但可停用。
+    preconditions: 已登录且具备字典维护权限。
+    operationSteps:
+      - stepId: FUN-019-S01
+        name: 选择字典分类
+        actor: 财务经理
+        description: 进入合同类型菜单，左侧分类树显示合同类型、产品类型、客户类型和收款方式；合同状态与开票收款状态以只读方式展示、不可维护；选择分类后右侧列表展示该分类的字典项编码、名称、排序号和是否启用。
+      - stepId: FUN-019-S02
+        name: 新增字典项
+        actor: 财务经理
+        description: 点击新增字典项，录入字典编码、字典项名称、排序号和是否启用；保存时校验同一分类下字典编码和名称唯一，校验通过后保存并立即在合同、产品、客户或收款录入下拉中生效。
+      - stepId: FUN-019-S03
+        name: 修改字典项
+        actor: 财务经理
+        description: 点击行内修改，字典编码只读、不可修改，仅可修改字典项名称、排序号和是否启用。
+      - stepId: FUN-019-S04
+        name: 删除字典项
+        actor: 财务经理、系统
+        description: 点击删除时，系统校验该字典项是否被合同、产品、客户或收款引用；未被引用时允许删除，已引用时提示该字典项已被业务数据引用、不允许删除，可改为停用。
+      - stepId: FUN-019-S05
+        name: 启用或停用字典项
+        actor: 财务经理
+        description: 在列表行内切换是否启用；停用后新业务不可选择该字典项，历史数据不受影响，启用后恢复可选。
+    relatedEntities:
+      - DIC-001
+      - DIC-004
+      - DIC-005
+      - DIC-006
+    relatedRules:
+      - RULE-010
